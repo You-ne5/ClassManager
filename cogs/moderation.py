@@ -12,7 +12,7 @@ class Moderation(Cog):
 
     @Cog.listener()
     async def on_ready(self):
-        self.client.add_view(HelpView(self.client))
+        self.client.add_view(HelpView(client=self.client))
         self.client.add_view(HelpPanel())
         return
     
@@ -67,7 +67,7 @@ class Moderation(Cog):
             description="Choose the subject you need help with:",
             color=Color.blurple()
         )
-        await interaction.response.send_message(embed=help_embed, view=HelpView(self.client))
+        await interaction.response.send_message(embed=help_embed, view=HelpView(client=self.client))
 
 
 

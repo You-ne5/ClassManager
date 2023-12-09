@@ -6,8 +6,6 @@ from nextcord import Intents, Interaction
 from nextcord.ext.commands import Bot, errors, Context
 from nextcord.ext.application_checks import errors as application_errors
 
-from utils.views import HelpView
-
 
 class Client(Bot):
     def __init__(self, *args, **kwargs):

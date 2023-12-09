@@ -23,14 +23,14 @@ class Confirm(ui.View):
 class HelpView(ui.View):
     def __init__(
         self,
-        client : Bot
+        client : Bot,
     ):
         super().__init__(timeout=None)
 
         self.client = client
 
         self.add_item(
-            HelpSelect(self.client)
+            HelpSelect(client=self.client)
             )
         
 
@@ -70,6 +70,8 @@ class HelpSelect(ui.Select):
         super().__init__(
             placeholder="Choose the subject you need help with",
             custom_id="help_subject",
+            max_values=1,
+            min_values=1,
             options=options,
         )
 
@@ -84,6 +86,8 @@ class HelpSelect(ui.Select):
         )
         await interaction.response.send_message(f"help channel created: {help_channel.mention}", ephemeral=True, delete_after=5)
         await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel())
+        
+        await interaction.message.edit(view=HelpView(client=self.client))
 
 
         def is_allowed(message: Message):
