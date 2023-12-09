@@ -16,7 +16,6 @@ class Annonce(Cog):
     
 
     @slash_command(name="announce")
-    @application_checks.has_any_role(DLG_ID, ADMIN_ROLE_ID)
     async def announce(
         self, 
         interaction: Interaction,
