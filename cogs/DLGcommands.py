@@ -23,8 +23,9 @@ class Annonce(Cog):
         description : str = SlashOption(required=True, name="description"),
         image : Attachment = SlashOption(required=False, name= "image")
         ):
+        # print(image.content_type)
 
-        valid_image = bool(image.content_type == "image/png") if image else False
+        valid_image = any(word in image.content_type for word in ["image", "png", "jpeg"]) if image else False
 
         announce_embed = Embed(
             title=title, 
