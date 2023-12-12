@@ -1,9 +1,10 @@
 import asyncio
 from nextcord.ext.commands import Bot, Cog
 from nextcord.ext import application_checks
-from nextcord import slash_command, Embed, Color, Interaction, TextChannel
+from nextcord import slash_command, Embed, Color, Interaction, TextChannel, Message
 
 from utils.views import HelpView, HelpPanel
+from config import LESSONS_CATEGORY_ID
 
 
 class Moderation(Cog):
@@ -69,7 +70,14 @@ class Moderation(Cog):
         )
         await interaction.response.send_message(embed=help_embed, view=HelpView(client=self.client))
 
-
+    @Cog.listener()
+    async def on_message(self, message : Message):
+        if message.author.id == self.client.user.id:
+            return
+        
+        if message.channel.category.id == LESSONS_CATEGORY_ID and not message.attachments:
+            await message.delete()
+            await message.channel.send(content=f"{message.author.mention} text messages aren't allowed in this channel", delete_after=4)
 
 def setup(client: Bot):
     client.add_cog(Moderation(client))
