@@ -77,7 +77,7 @@ class Moderation(Cog):
         
         if message.channel.category.id == LESSONS_CATEGORY_ID and not message.attachments:
             await message.delete()
-            await message.channel.send(content=f"{message.author.mention} text messages aren't allowed in this channel", delete_after=4)
+            await message.channel.send(content=f"{message.author.mention} text messages aren't allowed in this channel", delete_after=6)
 
 def setup(client: Bot):
     client.add_cog(Moderation(client))
