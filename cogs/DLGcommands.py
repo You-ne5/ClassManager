@@ -2,13 +2,18 @@ from nextcord.ext.commands import Bot, Cog
 from nextcord.ext import application_checks
 from nextcord import slash_command, Embed, Color, Interaction, SlashOption, TextChannel, Attachment
 
-from config import DLG_ID, ADMIN_ROLE_ID, ANNOUNCE_CHANNEL_ID
+from config import ANNOUNCE_CHANNEL_ID
 from utils.views import Confirm
+from aiosqlite import Connection, Cursor
 
 
 class Annonce(Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
+
+    async def connect_db(self):
+        self.db: Connection = self.client.db
+        self.cursor: Cursor = await self.db.cursor()
 
     @Cog.listener()
     async def on_ready(self):
@@ -23,7 +28,6 @@ class Annonce(Cog):
         description : str = SlashOption(required=True, name="description"),
         image : Attachment = SlashOption(required=False, name= "image")
         ):
-        # print(image.content_type)
 
         valid_image = any(word in image.content_type for word in ["image", "png", "jpeg"]) if image else False
 
@@ -65,9 +69,7 @@ class Annonce(Cog):
         await confirm_view.wait()
         
         if confirm_view.value:
-
             await announce_channel.send(embed=announce_embed, content="@everyone")
-
             await interaction.edit_original_message(embed=success_embed, view=None)
         else:
             await interaction.edit_original_message(embed=fail_embed, view=None)
