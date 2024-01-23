@@ -1,6 +1,6 @@
 from nextcord import *
 from nextcord.interactions import Interaction
-from config import HELP_CATEGORY_ID, HELP_ARCHIVE_CATEGORY_ID
+from config import HELP_CATEGORY_ID, HELP_ARCHIVE_CATEGORY_ID, EMBED_COLOR
 from nextcord.ext.commands import Bot
 
 
@@ -82,7 +82,7 @@ class HelpSelect(ui.Select):
         help_channel_embed = Embed(
             title=f"{interaction.user.nick.split()[0]}'s Help channel",
             description="explain your problem in one message (providing pictures), a classmate will come to help you",
-            color=Color.blurple()
+            color=EMBED_COLOR
         )
         await interaction.response.send_message(f"help channel created: {help_channel.mention}", ephemeral=True, delete_after=5)
         await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel())
@@ -136,7 +136,7 @@ class HelpPanel(ui.View):
 
 
                 await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
-                await interaction.channel.send(embed=Embed(title="Channel closed", color=Color.red()))
+                await interaction.channel.send(embed=Embed(title="Channel closed", color=EMBED_COLOR))
             else:
                 await interaction.edit_original_message(content="closing canceled", embed=None, view=None)
         else:
