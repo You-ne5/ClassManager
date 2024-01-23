@@ -5,11 +5,16 @@ from config import DISCORD_TOKEN
 from nextcord import Intents, Interaction
 from nextcord.ext.commands import Bot, errors, Context
 from nextcord.ext.application_checks import errors as application_errors
+import aiosqlite
 
 
 class Client(Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.loop.create_task(self.get_ready())
+
+    async def get_ready(self):
+        self.db = await aiosqlite.connect("main.db")
         self.load_extensions()
 
     def load_extensions(self) -> None:
