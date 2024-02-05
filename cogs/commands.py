@@ -2,7 +2,7 @@ from nextcord.ext.commands import Bot, Cog
 from nextcord.ext import application_checks
 from nextcord import slash_command, Embed, Color, Interaction, SlashOption, TextChannel, Attachment
 
-from config import ANNOUNCE_CHANNEL_ID, EMBED_COLOR
+from config import ANNOUNCE_CHANNEL_ID, EMBED_COLOR, CALCULATOR_CHANNEL_ID
 from utils.views import Confirm
 from utils.functions import pgcd, ppcm, eq_2
 from aiosqlite import Connection, Cursor
@@ -82,6 +82,10 @@ class Annonce(Cog):
         a : int = SlashOption(required=True, name="a"), 
         b : int = SlashOption(required=True, name="b")
         ):
+        if interaction.channel.id != CALCULATOR_CHANNEL_ID:
+            await interaction.response.send_message("ta9der tdir had commande ghir f calculator channel", ephemeral=True)
+            return
+        
         d = pgcd(a, b)
         embed = Embed(
             title=f"PGCD({a}, {b}) = {d}",
@@ -96,6 +100,11 @@ class Annonce(Cog):
         a : int = SlashOption(required=True, name="a"), 
         b : int = SlashOption(required=True, name="b")
         ):
+
+        if interaction.channel.id != CALCULATOR_CHANNEL_ID:
+            await interaction.response.send_message("ta9der tdir had commande ghir f calculator channel", ephemeral=True)
+            return
+        
         m = ppcm(a, b)
         embed = Embed(
             title=f"PPCM({a}, {b}) = {m}",
@@ -112,7 +121,10 @@ class Annonce(Cog):
         b : int = SlashOption(required=True, name="b"),
         c : int = SlashOption(required=True, name="c"),
         ):
-
+        if interaction.channel.id != CALCULATOR_CHANNEL_ID:
+            await interaction.response.send_message("ta9der tdir had commande ghir f calculator channel", ephemeral=True)
+            return
+        equasion = f"{a}x + {b}y = {c}"
         d = pgcd(a, b)
         a//=d
         b//=d
@@ -127,7 +139,7 @@ class Annonce(Cog):
 
         embed = Embed(
             title=f"حلول معادلة ذات مجهولين",
-            description=f"``equasion:`` {a}x + {b}y = {c}\n``Solutions:`` {f'(x, y) = ({solutions})' if solutions else 'لا تقبل حلول'}",
+            description=f"``equasion:`` {equasion}\n``Solutions:`` {f'(x, y) = ({solutions})' if solutions else 'لا تقبل حلول'}",
             color=EMBED_COLOR
         )
         await interaction.response.send_message(embed=embed)
