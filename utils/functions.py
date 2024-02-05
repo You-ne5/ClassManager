@@ -29,11 +29,11 @@ def eq_2(a, b, c):
     c//=d
 
     def special_solution(a, b, c):
-        for m in range(100000):
+        for m in range(1000):
             for i in [-1, 1]:
 
                 x = i*m
-                for z in range(100000):
+                for z in range(1000):
                     for j in [-1, 1]:
                         if z == 0 and j == 1:
                             continue
