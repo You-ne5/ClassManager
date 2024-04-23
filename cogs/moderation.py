@@ -9,10 +9,11 @@ from nextcord import (
     TextChannel,
     Message,
     SlashOption,
+    CategoryChannel
 )
 from aiosqlite import Connection, Cursor
 
-from config import EMBED_COLOR
+from config import EMBED_COLOR, HELP_ARCHIVE_CATEGORY_ID
 from utils.views import HelpView, HelpPanel, Confirm
 from config import LESSONS_CATEGORY_ID
 
@@ -29,7 +30,7 @@ class Moderation(Cog):
     async def on_ready(self):
         await self.connect_db()
         self.client.add_view(HelpView(client=self.client))
-        self.client.add_view(HelpPanel())
+        self.client.add_view(HelpPanel(client=self.client))
         return
 
     @slash_command(name="subject")
@@ -91,6 +92,12 @@ class Moderation(Cog):
 
         await interaction.edit_original_message(embed=success_embed, view=None)
 
+    # @application_checks.has_permissions(administrator=True)
+    # @slash_command(name="test")
+    # async def test(self, interaction: Interaction):
+    #     for i in range(47):
+    #         help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
+    #         await interaction.guild.create_text_channel(name=f"{i}", category=help_archive_category)
 
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="clear")
