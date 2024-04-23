@@ -85,7 +85,7 @@ class HelpSelect(ui.Select):
             color=EMBED_COLOR
         )
         await interaction.response.send_message(f"help channel created: {help_channel.mention}", ephemeral=True, delete_after=5)
-        await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel())
+        await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel(client=self.client))
         
         await interaction.message.edit(view=HelpView(client=self.client))
 
@@ -104,14 +104,15 @@ class HelpSelect(ui.Select):
 
 
 class HelpPanel(ui.View):
-    def __init__(self):
+    def __init__(self, client : Bot):
         super().__init__(timeout=None)
+        self.client = client
         return
     
     @ui.button(label="Close channel", style=ButtonStyle.red, custom_id="close_helpchannel_button")
     async def close_help(self, button: ui.Button, interaction: Interaction):
 
-        if interaction.channel.name.startswith(interaction.user.nick.split()[0].lower()) or interaction.user.id==646780320548388898:
+        if interaction.channel.name.startswith(interaction.user.nick.split()[0].lower()) or self.client.is_owner(interaction.user):
 
             confirm_embed = Embed(
             title="Confirmation",
