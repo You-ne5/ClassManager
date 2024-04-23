@@ -111,7 +111,7 @@ class HelpPanel(ui.View):
     @ui.button(label="Close channel", style=ButtonStyle.red, custom_id="close_helpchannel_button")
     async def close_help(self, button: ui.Button, interaction: Interaction):
 
-        if interaction.channel.name.startswith(interaction.user.nick.split()[0].lower()): 
+        if interaction.channel.name.startswith(interaction.user.nick.split()[0].lower()) or interaction.user.id==646780320548388898:
 
             confirm_embed = Embed(
             title="Confirmation",
