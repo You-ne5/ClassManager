@@ -125,6 +125,7 @@ class HelpPanel(ui.View):
             await confirm_view.wait()
 
             if confirm_view.value:
+
                 perms = {interaction.guild.default_role : PermissionOverwrite(view_channel=True, send_messages=False)}
                 help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
                 archive_channel_name = f"{interaction.channel.name}-1"
@@ -135,9 +136,15 @@ class HelpPanel(ui.View):
                     if channel.name==archive_channel_name:
                         archive_channel_name = f"{archive_channel_name[:-1]}{str(int(channel.name[-1]) + 1)}"
 
+                try:
+                    await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
+                except errors.HTTPException:
+                    channels = help_archive_category.channels
+                    await channels[0].delete()
+                    await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
 
-                await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
                 await interaction.channel.send(embed=Embed(title="Channel closed", color=EMBED_COLOR))
+                
             else:
                 await interaction.edit_original_message(content="closing canceled", embed=None, view=None)
         else:
