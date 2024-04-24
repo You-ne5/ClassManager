@@ -13,8 +13,9 @@ from nextcord import (
 )
 from aiosqlite import Connection, Cursor
 
-from config import EMBED_COLOR, HELP_ARCHIVE_CATEGORY_ID
+from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel, Confirm
+from utils.functions import get_hac_id
 from config import LESSONS_CATEGORY_ID
 
 
@@ -91,14 +92,6 @@ class Moderation(Cog):
         await self.db.commit()
 
         await interaction.edit_original_message(embed=success_embed, view=None)
-
-    # @application_checks.has_permissions(administrator=True)
-    # @slash_command(name="test")
-    # async def test(self, interaction: Interaction):
-    #     for i in range(47):
-    #         help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
-    #         await interaction.guild.create_text_channel(name=f"{i}", category=help_archive_category)
-
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="clear")
     async def clear(
@@ -155,9 +148,20 @@ class Moderation(Cog):
             description="Choose the subject you need help with:",
             color=EMBED_COLOR,
         )
-        await interaction.response.send_message(
-            embed=help_embed, view=HelpView(client=self.client)
-        )
+        fail_embed = Embed(
+                title="HAC not configured",
+                description="help archive category hasn't been configured yet or category no longer exists, use '/config hac' to configure it",
+                color=Color.red()
+            )
+        
+        hac_id = await get_hac_id(guild_id=interaction.guild.id, cursor=self.cursor)
+        hac_category = interaction.guild.get_channel(hac_id if hac_id else 0)
+        if hac_category:
+            await interaction.response.send_message(
+                embed=help_embed, view=HelpView(client=self.client)
+            )
+        else:
+            await interaction.response.send_message(embed=fail_embed)
 
     @Cog.listener()
     async def on_message(self, message: Message):
@@ -173,6 +177,38 @@ class Moderation(Cog):
                 content=f"{message.author.mention} text messages aren't allowed in this channel",
                 delete_after=6,
             )
+    
+
+    @slash_command(name="config")
+    async def config(self, interaction : Interaction):
+        return
+    
+    @config.subcommand(name="hac", description="configure Help Archive Category")
+    async def config_HAC(self, interaction : Interaction, category : CategoryChannel = SlashOption(name="category")):
+        response_embed = Embed(
+                title=None,
+                description=None,
+                color=EMBED_COLOR
+            )
+        try:
+            HAC_id = await self.cursor.execute("SELECT HelpArchiveCategoryID FROM Channels WHERE GuildID=?", (interaction.guild.id,))
+            HAC_id = await HAC_id.fetchone()
+            if HAC_id:
+                await self.cursor.execute("UPDATE Channels SET HelpArchiveCategoryID=? WHERE GuildID=?", (category.id, interaction.guild.id))
+            else:
+                await self.cursor.execute("INSERT INTO Channels VALUES (?,?,?)", (category.id, interaction.guild.id, 0))
+            await self.db.commit()
+
+            response_embed.title = "HAC configued successfully!"
+            response_embed.description = f"Help Archive Category is now {category.mention}"
+
+        except Exception as error:
+            response_embed.title = "something went wrong"
+            response_embed.description = str(error)
+            response_embed.color = Color.red()
+
+        await interaction.response.send_message(embed=response_embed)          
+
 
 
 def setup(client: Bot):
