@@ -13,8 +13,15 @@ class Client(Bot):
         super().__init__(*args, **kwargs)
         self.loop.create_task(self.get_ready())
 
-    async def get_ready(self):
+    async def get_ready(self): 
         self.db = await aiosqlite.connect("main.db")
+        self.cursor = await self.db.cursor()
+        await self.cursor.execute("""CREATE TABLE IF NOT EXISTS Channels(
+                        HelpArchiveCategoryID INTERGER NOT NULL,
+                        GuildId INTEGER NOT NULL,
+                        CategoryIndex INTEGER
+        )""")
+        await self.db.commit()
         self.load_extensions()
 
     def load_extensions(self) -> None:
@@ -37,9 +44,9 @@ class Client(Bot):
         print("---------------------------")
 
     async def on_ready(self):
-        print("Ready !")
+        print(f"Ready !, connected as {self.user.name}")
 
-    
+
     async def on_application_command_error(
         self, interaction: Interaction, error: Exception
     ) -> None:
