@@ -24,7 +24,6 @@ async def create_new_hac(interaction: Interaction):  # hac = Help Archive Catego
     )
     req = await req.fetchone()
     category_idx = req[0]
-    print(category_idx)
     new_hac = await interaction.guild.create_category(
         name=f"Help archive ({category_idx})"
     )
