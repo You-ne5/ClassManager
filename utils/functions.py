@@ -1,6 +1,12 @@
 from nextcord import Interaction
 from aiosqlite import Cursor, Connection
-from config import get_db
+import aiosqlite
+
+async def get_db():
+    db = await aiosqlite.connect("main.db")
+    cursor = await db.cursor()
+
+    return (db, cursor)
 
 async def get_hac_id(guild_id: int, cursor: Cursor):  # hac = Help Archive Category
     HAC_id = await cursor.execute(
