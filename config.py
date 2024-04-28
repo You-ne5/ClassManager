@@ -15,9 +15,3 @@ CALCULATOR_CHANNEL_ID : int = int(env["CALCULATOR_CHANNEL_ID"])
 
 #code
 EMBED_COLOR = 0Xd4af37
-
-async def get_db():
-    db = await aiosqlite.connect("main.db")
-    cursor = await db.cursor()
-
-    return (db, cursor)
