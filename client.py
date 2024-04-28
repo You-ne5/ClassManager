@@ -21,6 +21,10 @@ class Client(Bot):
                         GuildId INTEGER NOT NULL,
                         CategoryIndex INTEGER
         )""")
+        await self.cursor.execute("""CREATE TABLE IF NOT EXISTS HelpChannels(
+                        ChannelId INTERGER NOT NULL,
+                        AuthorId INTERGER NOT NULL
+        )""")
         await self.db.commit()
         self.load_extensions()
 
