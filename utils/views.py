@@ -1,9 +1,9 @@
 import aiosqlite
 from nextcord import *
 from nextcord.interactions import Interaction
-from config import HELP_CATEGORY_ID, EMBED_COLOR
+from config import HELP_CATEGORY_ID, EMBED_COLOR, OWNER_ID
 from nextcord.ext.commands import Bot
-from utils.functions import get_hac_id, create_new_hac
+from utils.functions import get_hac_id, create_new_hac, get_db
 
 
 class Confirm(ui.View):
@@ -80,7 +80,11 @@ class HelpSelect(ui.Select):
     async def callback(self, interaction: Interaction) -> None:
         help_category : CategoryChannel = interaction.guild.get_channel(HELP_CATEGORY_ID)
         help_channel = await help_category.create_text_channel(f"{interaction.user.nick.split()[0]}-{self.values[0]}")
-        
+
+        connection, cursor = await get_db()
+        req = await cursor.execute("INSERT INTO HelpChannels Values (?,?)", (help_channel.id, interaction.user.id))
+        await connection.commit()
+
         help_channel_embed = Embed(
             title=f"{interaction.user.nick.split()[0]}'s Help channel",
             description="explain your problem in one message (providing pictures), a classmate will come to help you",
@@ -111,10 +115,23 @@ class HelpPanel(ui.View):
         self.client = client
         return
     
+    async def can_close(self, interaction : Interaction):
+        connection, cursor = await get_db()
+        req = await cursor.execute("SELECT AuthorId FROM HelpChannels WHERE ChannelId=?", (interaction.channel.id,))
+        author_id = await req.fetchone()
+        if interaction.user.id == OWNER_ID:
+            can_close = True
+        else:
+            can_close = bool(interaction.user.id == author_id[0])
+
+        return can_close
+
+
     @ui.button(label="Close channel", style=ButtonStyle.red, custom_id="close_helpchannel_button")
     async def close_help(self, button: ui.Button, interaction: Interaction):
+        can_close = await self.can_close(interaction=interaction)
         
-        if interaction.channel.name.startswith(interaction.user.nick.split()[0].lower()) or self.client.is_owner(interaction.user):
+        if can_close:
 
             confirm_embed = Embed(
             title="Confirmation",
@@ -130,7 +147,6 @@ class HelpPanel(ui.View):
 
                 perms = {interaction.guild.default_role : PermissionOverwrite(view_channel=True, send_messages=False)}
                 HELP_ARCHIVE_CATEGORY_ID = await get_hac_id(interaction.guild.id, self.client.cursor)
-                print(HELP_ARCHIVE_CATEGORY_ID)
                 help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
                 archive_channel_name = f"{interaction.channel.name}-1"
 
@@ -146,8 +162,12 @@ class HelpPanel(ui.View):
                     help_archive_category = await create_new_hac(interaction)
                     await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
                 await interaction.channel.send(embed=Embed(title="Channel closed", color=EMBED_COLOR))
+                await interaction.message.edit(view=None)
                 
             else:
                 await interaction.edit_original_message(content="closing canceled", embed=None, view=None)
         else:
-            return
+            if interaction.user.id in [492673242415497266, 702617323793547365]:
+                await interaction.response.send_message("ydek fih", ephemeral=True)
+            else:
+                await interaction.response.send_message("permission denied", ephemeral=True, delete_after=3)
