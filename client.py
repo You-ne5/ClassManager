@@ -48,7 +48,7 @@ class Client(Bot):
         print("---------------------------")
 
     async def on_ready(self):
-        print(f"Ready !, connected as {self.user.name}")
+        print(f"Ready ! connected as {self.user.name}")
 
 
     async def on_application_command_error(
