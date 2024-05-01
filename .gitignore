@@ -4,3 +4,4 @@
 .venv/
 tests/
 *.db
+ecosystem.config.js
