@@ -1,6 +1,7 @@
-from nextcord import Interaction
+from nextcord import Interaction, Message
 from aiosqlite import Cursor, Connection
 import aiosqlite
+import validators
 
 async def get_db():
     db = await aiosqlite.connect("main.db")
@@ -40,6 +41,10 @@ async def create_new_hac(interaction: Interaction):  # hac = Help Archive Catego
 
     return new_hac
 
+def message_verif(message : Message):
+    content = message.content
+    contains_link = any(validators.url(ele) for ele in content.split()) and "https://tenor.com" not in content
+    return bool(bool(message.attachments) or contains_link)
 
 def pgcd(a, b):
 

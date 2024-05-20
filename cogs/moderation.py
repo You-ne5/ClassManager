@@ -15,7 +15,7 @@ from aiosqlite import Connection, Cursor
 
 from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel, Confirm
-from utils.functions import get_hac_id
+from utils.functions import get_hac_id, message_verif
 from config import LESSONS_CATEGORY_ID
 
 
@@ -167,10 +167,9 @@ class Moderation(Cog):
     async def on_message(self, message: Message):
         if message.author.id == self.client.user.id:
             return
-
         if (
             message.channel.category.id == LESSONS_CATEGORY_ID
-            and not message.attachments
+            and not message_verif(message)
         ):
             await message.delete()
             await message.channel.send(
