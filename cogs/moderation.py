@@ -14,7 +14,7 @@ from nextcord import (
 
 from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel, Confirm
-from utils.functions import get_hac_id, message_verif
+from utils.functions import get_hac_id, message_verif, create_constant
 from utils.db import DB
 
 class Moderation(Cog):
@@ -154,7 +154,7 @@ class Moderation(Cog):
                 color=Color.red()
             )
         
-        hac_id = await get_hac_id(guild_id=interaction.guild.id, cursor=self.cursor)
+        hac_id = await get_hac_id(guild_id=interaction.guild.id)
         hac_category = interaction.guild.get_channel(hac_id if hac_id else 0)
         if hac_category:
             await interaction.response.send_message(
@@ -178,47 +178,52 @@ class Moderation(Cog):
                 content=f"{message.author.mention} text messages aren't allowed in this channel",
                 delete_after=6,
             )
-    
-
-    @slash_command(name="config")
-    async def config(self, interaction : Interaction):
-        return
 
 
-    @config.subcommand(name="hac", description="configure Help Archive Category")
-    async def config_HAC(self, interaction : Interaction, category : CategoryChannel = SlashOption(name="category")):
-        response_embed = Embed(
-                title=None,
-                description=None,
-                color=EMBED_COLOR
-            )
-        try:
-            HAC_id = await self.db.get_fetchone("SELECT HelpArchiveCategoryID FROM Channels WHERE GuildID=?", (interaction.guild.id,))
+    @application_checks.has_permissions(administrator=True)
+    @slash_command(name="setup", description="Setup the bot")
+    async def setup(self, interaction : Interaction):
 
-            if HAC_id:
-                await self.db.request("UPDATE Channels SET HelpArchiveCategoryID=? WHERE GuildID=?", (category.id, interaction.guild.id))
-            else:
-                await self.db.request("INSERT INTO Channels VALUES (?,?,?)", (category.id, interaction.guild.id, 0))
+        guild_id = interaction.guild_id
+        constants_created = []
+        return_embed = Embed(title="Bot has been Setup seccessfully", color=EMBED_COLOR)
 
-            response_embed.title = "HAC configued successfully!"
-            response_embed.description = f"Help Archive Category is now {category.mention}"
+        guild_constants = await self.db.get_fetchone("SELECT * FROM GuildsConstants WHERE GuildId=?", (guild_id,))
+        print(guild_constants)
+        if guild_constants:
+            help_category = interaction.guild.get_channel(guild_constants[1])
+            help_archive_category = interaction.guild.get_channel(guild_constants[2])
+            lessons_category = interaction.guild.get_channel(guild_constants[3])
+            exo_channel = interaction.guild.get_channel(guild_constants[4])
+            announce_channel = interaction.guild.get_channel(guild_constants[5])
 
-        except Exception as error:
-            response_embed.title = "something went wrong"
-            response_embed.description = str(error)
-            response_embed.color = Color.red()
+            if not help_category:
+                await create_constant(interaction, "HelpCategoryId")
+                constants_created.append("help category")
+            if not help_archive_category:
+                await create_constant(interaction, "HelpArchiveCategoryId")
+                constants_created.append("help archive")
+            if not lessons_category:
+                await create_constant(interaction, "LessonsCategoryId")
+                constants_created.append("Lessons")
+            if not exo_channel:
+                await create_constant(interaction, "ExoChannelId")
+                constants_created.append("exercice channel")
+            if not announce_channel:
+                await create_constant(interaction, "AnnounceChannelId")
+                constants_created.append("announce channel")
+        else:
+            await self.db.request("INSERT INTO 'GuildsConstants' VALUES (?,?,?,?,?,?)", (guild_id, None, None, None, None, None))
 
-        await interaction.response.send_message(embed=response_embed)          
+            constants_created = ["HelpCategoryId", "HelpArchiveCategoryID", "LessonsCategoryId", "ExoChannelId", "AnnounceChannelId"]
 
-
-    @slash_command(name="add")
-    def add(self, interaction : Interaction):
-        return
-    
-
-    @add.subcommand(name="subject")
-    def add_subject(self, interaction : Interaction, name : str, emoji : str):
-        pass
+            for constant_name in constants_created:
+                await create_constant(interaction, constant_name)
+        
+        if constants_created:
+            return_embed.description = "**Added Constants:**\n"
+            return_embed.description += "\n".join([f"- {s}" for s in constants_created])
+        await interaction.response.send_message(embed=return_embed)
 
 
 def setup(client: Bot):
