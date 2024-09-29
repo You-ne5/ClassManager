@@ -8,15 +8,20 @@ class DB:
         self.conn = await connect(path)
         self.curr = await self.conn.cursor()
 
-        await self.curr.execute("""CREATE TABLE IF NOT EXISTS Channels(
-                        HelpArchiveCategoryID INTERGER NOT NULL,
-                        GuildId INTEGER NOT NULL,
-                        CategoryIndex INTEGER
-        )""")
         
         await self.curr.execute("""CREATE TABLE IF NOT EXISTS HelpChannels(
+                        GuildId INTERGER NOT NULL,
                         ChannelId INTERGER NOT NULL,
                         AuthorId INTERGER NOT NULL
+        )""")
+
+        await self.curr.execute("""CREATE TABLE IF NOT EXISTS GuildsConstants(
+                        GuildId INTERGER NOT NULL,
+                        HelpCategoryId INTERGER,
+                        HelpArchiveCategoryID INTERGER,
+                        LessonsCategoryId INTERGER,
+                        ExoChannelId INTERGER,
+                        AnnounceChannelId INTERGER
         )""")
         
     async def request(self, req: str, args: tuple = None):
