@@ -54,15 +54,15 @@ class Moderation(Cog):
         fail_embed = Embed(color=EMBED_COLOR)
         success_embed = Embed(
             title="Subject added",
-            description=f"Subject {subject_name,subject_emoji} has been added !",
+            description=f"Subject '{subject_emoji}{subject_name}' has been added !",
             color=EMBED_COLOR,
         )
 
-        res = await self.cursor.execute("SELECT name FROM subjects")
-        existing_names = await res.fetchall()
-        existing_names = [name[0] for name in existing_names]
+        existing_names = await self.db.get_fetchall("SELECT Name FROM 'Subjects' WHERE GuildId=?", (interaction.guild_id,))
+        existing_names = [name[0].lower() for name in existing_names]
+        print(existing_names)
 
-        if subject_name in existing_names:
+        if subject_name.lower() in existing_names:
             fail_embed.title = "Subject already exists"
             fail_embed.description = f"The subject '{subject_name}' already exists, please try again using another name"
             await interaction.response.send_message(embed=fail_embed, ephemeral=True)
@@ -81,15 +81,82 @@ class Moderation(Cog):
             return
 
         await self.db.request(
-            """INSERT INTO 'subjects'('name', 'emoji') VALUES(?,?)""",
+            """INSERT INTO 'Subjects'('GuildId', 'Name', 'Emoji') VALUES(?,?,?)""",
             (
-                subject_name,
+                interaction.guild_id,
+                subject_name.lower(),
                 subject_emoji,
             ),
         )
 
         await interaction.edit_original_message(embed=success_embed, view=None)
 
+
+    @application_checks.has_permissions(administrator=True)
+    @subject.subcommand(name="remove")
+    async def subject_remove(
+        self,
+        interaction: Interaction,
+        subject_name: str = SlashOption(name="name", description="the subject's name"),
+    ):
+        confirm_embed = Embed(
+            title="Are you sure you want to remove this subject?",
+            description=f"``Subject name:`` {subject_name}",
+            colour=EMBED_COLOR,
+        )
+        fail_embed = Embed(color=EMBED_COLOR)
+        success_embed = Embed(
+            title="Subject Removed",
+            description=f"Subject '{subject_name}' has been removed !",
+            color=EMBED_COLOR,
+        )
+
+        existing_names = await self.db.get_fetchall("SELECT Name FROM 'Subjects' WHERE GuildId=?", (interaction.guild_id,))
+        existing_names = [name[0].lower() for name in existing_names]
+        print(existing_names)
+
+        if not subject_name.lower() in existing_names:
+            fail_embed.title = "Subject does not exist"
+            fail_embed.description = f"The subject '{subject_name}' Does not exist, please verify the subject name and try again"
+            await interaction.response.send_message(embed=fail_embed, ephemeral=True)
+            return
+        
+        confirm_view = Confirm()
+        await interaction.response.send_message(
+            embed=confirm_embed, view=confirm_view, ephemeral=True
+        )
+
+        await confirm_view.wait()
+
+        if not confirm_view.value:
+            fail_embed.title="Operation cancelled"
+            await interaction.edit_original_message(embed=fail_embed, view=None)
+            return
+
+        await self.db.request(
+            "DELETE FROM Subjects WHERE GuildId=? AND Name=?",
+            (
+                interaction.guild_id,
+                subject_name.lower(),
+            ),
+        )
+
+        await interaction.edit_original_message(embed=success_embed, view=None)
+
+    @application_checks.has_permissions(administrator=True)
+    @subject.subcommand(name="list")
+    async def subject_list(self, interaction : Interaction):
+        subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
+        print(subjects)
+        subjects = [f"- {subject_emoji} {subject_name}" for subject_name, subject_emoji in subjects]
+
+        list_embed = Embed(
+            title=f"List of Subjects in {interaction.guild.name}",
+            description="\n".join(subjects) if subjects else "No subjects yet",
+            color=Color.blue()
+        )
+        list_embed.set_thumbnail(url=interaction.guild.icon)
+        await interaction.response.send_message(embed=list_embed)
 
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="clear")
@@ -189,7 +256,7 @@ class Moderation(Cog):
         return_embed = Embed(title="Bot has been Setup seccessfully", color=EMBED_COLOR)
 
         guild_constants = await self.db.get_fetchone("SELECT * FROM GuildsConstants WHERE GuildId=?", (guild_id,))
-        print(guild_constants)
+
         if guild_constants:
             help_category = interaction.guild.get_channel(guild_constants[1])
             help_archive_category = interaction.guild.get_channel(guild_constants[2])
