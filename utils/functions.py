@@ -1,42 +1,83 @@
-from nextcord import Interaction, Message
-from aiosqlite import Cursor, Connection
+from nextcord import Message, Interaction
 import validators
 from utils.db import DB
 
-async def get_hac_id(guild_id: int, cursor: Cursor):  # hac = Help Archive Category
-    HAC_id = await cursor.execute(
-        "SELECT HelpArchiveCategoryID FROM Channels WHERE GuildID=?", (guild_id,)
-    )
-    HAC_id = await HAC_id.fetchone()
-    HAC_id = HAC_id[0] if HAC_id else None
-    return HAC_id
-
-
-async def create_new_hac(interaction: Interaction):  # hac = Help Archive Category
+async def get_hac_id(guild_id: int):  # hac = Help Archive Category
 
     db = DB()
     await db.load_db("main.db")
 
-    req = await db.get_fetchone(
-        "SELECT CategoryIndex FROM Channels WHERE GuildID=?", (interaction.guild.id,)
+    HAC_id = await db.get_fetchone(
+        "SELECT HelpArchiveCategoryID FROM GuildsConstants WHERE GuildID=?", (guild_id,)
     )
-    category_idx = req[0]
-    new_hac = await interaction.guild.create_category(
-        name=f"Help archive ({category_idx})"
+    HAC_id = HAC_id[0] if HAC_id else None
+    return HAC_id
+
+
+async def get_help_category_id(guild_id: int) -> int | None:
+
+    db = DB()
+    await db.load_db("main.db")
+
+    help_category_id = await db.get_fetchone(
+        "SELECT HelpCategoryId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
     )
+    help_category_id = help_category_id[0] if help_category_id else None
+    return help_category_id
 
-    await db.request(
-        "UPDATE Channels SET HelpArchiveCategoryID=?, CategoryIndex=? WHERE GuildID=?",
-        (
-            new_hac.id,
-            category_idx + 1,
-            interaction.guild.id,
-        ),
+
+async def get_lessons_category_id(guild_id: int): 
+
+    db = DB()
+    await db.load_db("main.db")
+
+    lessons_category_id = await db.get_fetchone(
+        "SELECT LessonsCategoryId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
     )
+    lessons_category_id = lessons_category_id[0] if lessons_category_id else None
+    return lessons_category_id
 
-    return new_hac
 
-def message_verif(message : Message):
+async def get_exo_channel_id(guild_id: int): 
+
+    db = DB()
+    await db.load_db("main.db")
+
+    exo_channel_id = await db.get_fetchone(
+        "SELECT ExoChannelId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
+    )
+    exo_channel_id = exo_channel_id[0] if exo_channel_id else None
+    return exo_channel_id
+
+
+async def get_announce_channel_id(guild_id: int): 
+
+    db = DB()
+    await db.load_db("main.db")
+
+    announce_channel_id = await db.get_fetchone(
+        "SELECT AnnounceChannelId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
+    )
+    announce_channel_id = announce_channel_id[0] if announce_channel_id else None
+    return announce_channel_id
+
+
+async def create_constant(interaction : Interaction, constant_name_in_db : str) -> None:
+    db = DB()
+    await db.load_db("main.db")
+
+    if constant_name_in_db in ["HelpCategoryId", "HelpArchiveCategoryId", "LessonsCategoryId"]:
+        category_name = "help" if constant_name_in_db == "HelpCategoryId" else "help archive" if constant_name_in_db == "HelpArchiveCategoryId" else "Lessons"
+        created_constant = await interaction.guild.create_category(name=category_name)
+
+    elif constant_name_in_db in ["ExoChannelId", "AnnounceChannelId"]:
+        channel_name = "📝exercices" if constant_name_in_db == "ExoChannelId" else "📢annonces" if constant_name_in_db == "AnnounceChannelId" else "unnamed channel"
+        created_constant = await interaction.guild.create_text_channel(name=channel_name)
+
+    await db.request(f"UPDATE GuildsConstants SET {constant_name_in_db}=? WHERE GuildId=?", (created_constant.id, interaction.guild_id))
+
+
+def message_verif(message : Message) -> bool:
     content = message.content
     contains_link = any(validators.url(ele) for ele in content.split()) and "https://tenor.com" not in content
     return bool(bool(message.attachments) or contains_link)
