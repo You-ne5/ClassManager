@@ -1,9 +1,10 @@
 from nextcord import *
 from nextcord.interactions import Interaction
-from config import HELP_CATEGORY_ID, EMBED_COLOR, OWNER_ID
+from config import EMBED_COLOR, OWNER_ID
 from nextcord.ext.commands import Bot
-from utils.functions import get_hac_id, create_new_hac
+from utils.functions import get_hac_id
 from utils.db import DB
+from utils.functions import get_help_category_id
 
 
 class Confirm(ui.View):
@@ -54,7 +55,6 @@ class HelpSelect(ui.Select):
         history_select = SelectOption(label="Histoire", description="", emoji="📜")
         geo_select = SelectOption(label="Geo", description="", emoji="🌍")
         philo_select = SelectOption(label="Philosophy", description="", emoji="🧠")
-
             
         options = [
             math_select, 
@@ -78,7 +78,7 @@ class HelpSelect(ui.Select):
         )
 
     async def callback(self, interaction: Interaction) -> None:
-        help_category : CategoryChannel = interaction.guild.get_channel(HELP_CATEGORY_ID)
+        help_category : CategoryChannel = interaction.guild.get_channel(get_help_category_id(interaction.guild_id))
         help_channel = await help_category.create_text_channel(f"{interaction.user.nick.split()[0]}-{self.values[0]}")
 
         self.db = DB()
@@ -153,8 +153,6 @@ class HelpPanel(ui.View):
                 help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
                 archive_channel_name = f"{interaction.channel.name}-1"
 
-                n=0
-
                 for channel in help_archive_category.channels:
                     if channel.name==archive_channel_name:
                         archive_channel_name = f"{archive_channel_name[:-1]}{str(int(channel.name[-1]) + 1)}"
@@ -162,8 +160,10 @@ class HelpPanel(ui.View):
                 try:
                     await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
                 except errors.HTTPException:
-                    help_archive_category = await create_new_hac(interaction)
+                    sorted_channels = sorted(help_archive_category.channels, key=lambda c: c.created_at)
+                    await sorted_channels[0].delete()
                     await interaction.channel.edit(name=archive_channel_name, category=help_archive_category, overwrites=perms)
+                    
                 await interaction.channel.send(embed=Embed(title="Channel closed", color=EMBED_COLOR))
                 await interaction.message.edit(view=None)
                 
