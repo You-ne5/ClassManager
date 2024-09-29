@@ -1,9 +1,9 @@
-import aiosqlite
 from nextcord import *
 from nextcord.interactions import Interaction
 from config import HELP_CATEGORY_ID, EMBED_COLOR, OWNER_ID
 from nextcord.ext.commands import Bot
-from utils.functions import get_hac_id, create_new_hac, get_db
+from utils.functions import get_hac_id, create_new_hac
+from utils.db import DB
 
 
 class Confirm(ui.View):
@@ -81,9 +81,10 @@ class HelpSelect(ui.Select):
         help_category : CategoryChannel = interaction.guild.get_channel(HELP_CATEGORY_ID)
         help_channel = await help_category.create_text_channel(f"{interaction.user.nick.split()[0]}-{self.values[0]}")
 
-        connection, cursor = await get_db()
-        req = await cursor.execute("INSERT INTO HelpChannels Values (?,?)", (help_channel.id, interaction.user.id))
-        await connection.commit()
+        self.db = DB()
+        await self.db.load_db("main.db")
+
+        req = await self.db.request("INSERT INTO HelpChannels Values (?,?)", (help_channel.id, interaction.user.id))
 
         help_channel_embed = Embed(
             title=f"{interaction.user.nick.split()[0]}'s Help channel",
@@ -116,9 +117,11 @@ class HelpPanel(ui.View):
         return
     
     async def can_close(self, interaction : Interaction):
-        connection, cursor = await get_db()
-        req = await cursor.execute("SELECT AuthorId FROM HelpChannels WHERE ChannelId=?", (interaction.channel.id,))
-        author_id = await req.fetchone()
+
+        self.db = DB()
+        await self.db.load_db("main.db")
+
+        author_id = await self.db.get_fetchone("SELECT AuthorId FROM HelpChannels WHERE ChannelId=?", (interaction.channel.id,))
         if interaction.user.id == OWNER_ID:
             can_close = True
         else:

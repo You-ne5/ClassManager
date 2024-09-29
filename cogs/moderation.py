@@ -11,21 +11,19 @@ from nextcord import (
     SlashOption,
     CategoryChannel
 )
-from aiosqlite import Connection, Cursor
 
 from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel, Confirm
 from utils.functions import get_hac_id, message_verif
-from config import LESSONS_CATEGORY_ID
-
+from utils.db import DB
 
 class Moderation(Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
 
     async def connect_db(self):
-        self.db: Connection = self.client.db
-        self.cursor: Cursor = await self.db.cursor()
+        self.db = DB()
+        await self.db.load_db("main.db")
 
     @Cog.listener()
     async def on_ready(self):
@@ -82,16 +80,17 @@ class Moderation(Cog):
             await interaction.edit_original_message(embed=fail_embed, view=None)
             return
 
-        await self.cursor.execute(
+        await self.db.request(
             """INSERT INTO 'subjects'('name', 'emoji') VALUES(?,?)""",
             (
                 subject_name,
                 subject_emoji,
             ),
         )
-        await self.db.commit()
 
         await interaction.edit_original_message(embed=success_embed, view=None)
+
+
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="clear")
     async def clear(
@@ -140,6 +139,7 @@ class Moderation(Cog):
         for message in messages:
             await message.delete()
 
+
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="setup_help")
     async def setup_help(self, interaction: Interaction):
@@ -163,12 +163,14 @@ class Moderation(Cog):
         else:
             await interaction.response.send_message(embed=fail_embed)
 
+
     @Cog.listener()
     async def on_message(self, message: Message):
+        lessons_category_id = 0 #to change
         if message.author.id == self.client.user.id:
             return
         if (
-            message.channel.category.id == LESSONS_CATEGORY_ID
+            message.channel.category.id == lessons_category_id
             and not message_verif(message)
         ):
             await message.delete()
@@ -181,7 +183,8 @@ class Moderation(Cog):
     @slash_command(name="config")
     async def config(self, interaction : Interaction):
         return
-    
+
+
     @config.subcommand(name="hac", description="configure Help Archive Category")
     async def config_HAC(self, interaction : Interaction, category : CategoryChannel = SlashOption(name="category")):
         response_embed = Embed(
@@ -190,13 +193,12 @@ class Moderation(Cog):
                 color=EMBED_COLOR
             )
         try:
-            HAC_id = await self.cursor.execute("SELECT HelpArchiveCategoryID FROM Channels WHERE GuildID=?", (interaction.guild.id,))
-            HAC_id = await HAC_id.fetchone()
+            HAC_id = await self.db.get_fetchone("SELECT HelpArchiveCategoryID FROM Channels WHERE GuildID=?", (interaction.guild.id,))
+
             if HAC_id:
-                await self.cursor.execute("UPDATE Channels SET HelpArchiveCategoryID=? WHERE GuildID=?", (category.id, interaction.guild.id))
+                await self.db.request("UPDATE Channels SET HelpArchiveCategoryID=? WHERE GuildID=?", (category.id, interaction.guild.id))
             else:
-                await self.cursor.execute("INSERT INTO Channels VALUES (?,?,?)", (category.id, interaction.guild.id, 0))
-            await self.db.commit()
+                await self.db.request("INSERT INTO Channels VALUES (?,?,?)", (category.id, interaction.guild.id, 0))
 
             response_embed.title = "HAC configued successfully!"
             response_embed.description = f"Help Archive Category is now {category.mention}"
@@ -208,6 +210,15 @@ class Moderation(Cog):
 
         await interaction.response.send_message(embed=response_embed)          
 
+
+    @slash_command(name="add")
+    def add(self, interaction : Interaction):
+        return
+    
+
+    @add.subcommand(name="subject")
+    def add_subject(self, interaction : Interaction, name : str, emoji : str):
+        pass
 
 
 def setup(client: Bot):

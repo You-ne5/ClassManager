@@ -1,13 +1,7 @@
 from nextcord import Interaction, Message
 from aiosqlite import Cursor, Connection
-import aiosqlite
 import validators
-
-async def get_db():
-    db = await aiosqlite.connect("main.db")
-    cursor = await db.cursor()
-
-    return (db, cursor)
+from utils.db import DB
 
 async def get_hac_id(guild_id: int, cursor: Cursor):  # hac = Help Archive Category
     HAC_id = await cursor.execute(
@@ -19,17 +13,19 @@ async def get_hac_id(guild_id: int, cursor: Cursor):  # hac = Help Archive Categ
 
 
 async def create_new_hac(interaction: Interaction):  # hac = Help Archive Category
-    db, cursor = await get_db()
-    req = await cursor.execute(
+
+    db = DB()
+    await db.load_db("main.db")
+
+    req = await db.get_fetchone(
         "SELECT CategoryIndex FROM Channels WHERE GuildID=?", (interaction.guild.id,)
     )
-    req = await req.fetchone()
     category_idx = req[0]
     new_hac = await interaction.guild.create_category(
         name=f"Help archive ({category_idx})"
     )
 
-    await cursor.execute(
+    await db.request(
         "UPDATE Channels SET HelpArchiveCategoryID=?, CategoryIndex=? WHERE GuildID=?",
         (
             new_hac.id,
@@ -37,7 +33,6 @@ async def create_new_hac(interaction: Interaction):  # hac = Help Archive Catego
             interaction.guild.id,
         ),
     )
-    await db.commit()
 
     return new_hac
 

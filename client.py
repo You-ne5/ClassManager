@@ -5,7 +5,7 @@ from config import DISCORD_TOKEN
 from nextcord import Intents, Interaction
 from nextcord.ext.commands import Bot, errors, Context
 from nextcord.ext.application_checks import errors as application_errors
-import aiosqlite
+from utils.db import DB
 
 
 class Client(Bot):
@@ -14,18 +14,8 @@ class Client(Bot):
         self.loop.create_task(self.get_ready())
 
     async def get_ready(self): 
-        self.db = await aiosqlite.connect("main.db")
-        self.cursor = await self.db.cursor()
-        await self.cursor.execute("""CREATE TABLE IF NOT EXISTS Channels(
-                        HelpArchiveCategoryID INTERGER NOT NULL,
-                        GuildId INTEGER NOT NULL,
-                        CategoryIndex INTEGER
-        )""")
-        await self.cursor.execute("""CREATE TABLE IF NOT EXISTS HelpChannels(
-                        ChannelId INTERGER NOT NULL,
-                        AuthorId INTERGER NOT NULL
-        )""")
-        await self.db.commit()
+        self.db = DB()
+        await self.db.load_db("main.db")
         self.load_extensions()
 
     def load_extensions(self) -> None:
