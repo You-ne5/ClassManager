@@ -20,7 +20,7 @@ async def get_help_category_id(guild_id: int) -> int | None:
     await db.load_db("main.db")
 
     help_category_id = await db.get_fetchone(
-        "SELECT HelpCategoryId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
+        "SELECT HelpCategoryId FROM GuildsConstants WHERE GuildId=?", (guild_id,)
     )
     help_category_id = help_category_id[0] if help_category_id else None
     return help_category_id
