@@ -6,7 +6,6 @@ from utils.functions import get_hac_id
 from utils.db import DB
 from utils.functions import get_help_category_id
 
-
 class Confirm(ui.View):
     def __init__(self):
         super().__init__()
@@ -27,48 +26,28 @@ class HelpView(ui.View):
     def __init__(
         self,
         client : Bot,
+        subjects : list[tuple[str]]
     ):
         super().__init__(timeout=None)
 
         self.client = client
 
         self.add_item(
-            HelpSelect(client=self.client)
+            HelpSelect(client=self.client, subjects=subjects)
             )
-        
+
 
 
 class HelpSelect(ui.Select):
     def __init__(
         self, 
-        client : Bot
+        client : Bot,
+        subjects : list[tuple[str]]
     ):
         self.client = client
 
-        math_select = SelectOption(label="Math", description="", emoji="📐")
-        physics_select = SelectOption(label="Physique", description="", emoji="🛰")
-        science_select = SelectOption(label="Science", description="", emoji="🧪")
-        français_select = SelectOption(label="Français", description="", emoji="🗼")
-        english_select = SelectOption(label="English", description="", emoji="🎩")
-        arabic_select = SelectOption(label="عربية", description="", emoji="📖")
-        charia_select = SelectOption(label="شريعة", description="", emoji="🕋")
-        history_select = SelectOption(label="Histoire", description="", emoji="📜")
-        geo_select = SelectOption(label="Geo", description="", emoji="🌍")
-        philo_select = SelectOption(label="Philosophy", description="", emoji="🧠")
+        options = [SelectOption(label=subject[0], emoji=subject[1]) for subject in subjects]
             
-        options = [
-            math_select, 
-            physics_select, 
-            science_select, 
-            français_select, 
-            english_select, 
-            arabic_select, 
-            charia_select, 
-            history_select, 
-            geo_select, 
-            philo_select
-            ]
-
         super().__init__(
             placeholder="Choose the subject you need help with",
             custom_id="help_subject",
@@ -76,37 +55,6 @@ class HelpSelect(ui.Select):
             min_values=1,
             options=options,
         )
-
-    async def callback(self, interaction: Interaction) -> None:
-        help_category : CategoryChannel = interaction.guild.get_channel(get_help_category_id(interaction.guild_id))
-        help_channel = await help_category.create_text_channel(f"{interaction.user.nick.split()[0]}-{self.values[0]}")
-
-        self.db = DB()
-        await self.db.load_db("main.db")
-
-        req = await self.db.request("INSERT INTO HelpChannels Values (?,?)", (help_channel.id, interaction.user.id))
-
-        help_channel_embed = Embed(
-            title=f"{interaction.user.nick.split()[0]}'s Help channel",
-            description="explain your problem in one message (providing pictures), a classmate will come to help you",
-            color=EMBED_COLOR
-        )
-        await interaction.response.send_message(f"help channel created: {help_channel.mention}", ephemeral=True, delete_after=5)
-        await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel(client=self.client))
-        
-        await interaction.message.edit(view=HelpView(client=self.client))
-
-
-        def is_allowed(message: Message):
-            return message.author.id == interaction.user.id and message.channel.id == help_channel.id
-
-        try:
-            await self.client.wait_for("message", timeout=600, check=is_allowed)
-        except TimeoutError:                
-            await help_channel.delete()
-            return
-        else:
-            await help_channel.send(f"@everyone", delete_after=2)
 
 
 
@@ -149,7 +97,7 @@ class HelpPanel(ui.View):
             if confirm_view.value:
 
                 perms = {interaction.guild.default_role : PermissionOverwrite(view_channel=True, send_messages=False)}
-                HELP_ARCHIVE_CATEGORY_ID = await get_hac_id(interaction.guild.id, self.client.cursor)
+                HELP_ARCHIVE_CATEGORY_ID = await get_hac_id(interaction.guild.id)
                 help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
                 archive_channel_name = f"{interaction.channel.name}-1"
 
@@ -170,7 +118,4 @@ class HelpPanel(ui.View):
             else:
                 await interaction.edit_original_message(content="closing canceled", embed=None, view=None)
         else:
-            if interaction.user.id in [492673242415497266, 702617323793547365]:
-                await interaction.response.send_message("ydek fih", ephemeral=True)
-            else:
-                await interaction.response.send_message("permission denied", ephemeral=True, delete_after=3)
+            await interaction.response.send_message("permission denied", ephemeral=True, delete_after=3)
