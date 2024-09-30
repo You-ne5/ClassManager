@@ -14,27 +14,71 @@ from nextcord import (
 
 from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel, Confirm
-from utils.functions import get_hac_id, message_verif, create_constant
+from utils.functions import get_hac_id, message_verif, create_constant, get_help_category_id, get_lessons_category_id
 from utils.db import DB
 
 class Moderation(Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
 
+
     async def connect_db(self):
         self.db = DB()
         await self.db.load_db("main.db")
 
+
     @Cog.listener()
     async def on_ready(self):
         await self.connect_db()
-        self.client.add_view(HelpView(client=self.client))
         self.client.add_view(HelpPanel(client=self.client))
         return
+
 
     @slash_command(name="subject")
     async def subject(self, interaction: Interaction):
         return
+
+
+    @Cog.listener()
+    async def on_interaction(self, interaction : Interaction):
+        if not interaction.data.get("custom_id") == "help_subject":
+            return
+        
+        help_category : CategoryChannel = interaction.guild.get_channel(await get_help_category_id(interaction.guild_id))
+        user_name = interaction.user.nick.split()[0] if interaction.user.nick else interaction.user.name
+        help_channel = await help_category.create_text_channel(f"{user_name}-{interaction.data["values"][0]}")
+
+        self.db = DB()
+        await self.db.load_db("main.db")
+
+        await self.db.request("INSERT INTO HelpChannels Values (?,?,?)", (interaction.guild.id, help_channel.id, interaction.user.id))
+
+        help_channel_embed = Embed(
+            title=f"{user_name}'s Help channel",
+            description="explain your problem in one message (providing pictures), a classmate will come to help you",
+            color=EMBED_COLOR
+        )
+        try:
+            await interaction.response.send_message(f"help channel created: {help_channel.mention}", ephemeral=True, delete_after=5)
+        except:
+            pass
+
+        await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel(client=self.client))
+        
+        subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
+        await interaction.message.edit(view=HelpView(client=self.client, subjects=subjects))
+
+        def is_allowed(message: Message):
+            return message.author.id == interaction.user.id and message.channel.id == help_channel.id
+
+        try:
+            await self.client.wait_for("message", timeout=600, check=is_allowed)
+        except TimeoutError:                
+            await help_channel.delete()
+            return
+        else:
+            await help_channel.send(f"@everyone", delete_after=2)
+
 
     @application_checks.has_permissions(administrator=True)
     @subject.subcommand(name="add")
@@ -60,7 +104,6 @@ class Moderation(Cog):
 
         existing_names = await self.db.get_fetchall("SELECT Name FROM 'Subjects' WHERE GuildId=?", (interaction.guild_id,))
         existing_names = [name[0].lower() for name in existing_names]
-        print(existing_names)
 
         if subject_name.lower() in existing_names:
             fail_embed.title = "Subject already exists"
@@ -88,7 +131,8 @@ class Moderation(Cog):
                 subject_emoji,
             ),
         )
-
+        lessons_category = interaction.guild.get_channel(await get_lessons_category_id(interaction.guild_id))
+        await lessons_category.create_text_channel(name=f"{subject_emoji} {subject_name.lower()}")
         await interaction.edit_original_message(embed=success_embed, view=None)
 
 
@@ -113,7 +157,6 @@ class Moderation(Cog):
 
         existing_names = await self.db.get_fetchall("SELECT Name FROM 'Subjects' WHERE GuildId=?", (interaction.guild_id,))
         existing_names = [name[0].lower() for name in existing_names]
-        print(existing_names)
 
         if not subject_name.lower() in existing_names:
             fail_embed.title = "Subject does not exist"
@@ -141,7 +184,22 @@ class Moderation(Cog):
             ),
         )
 
+        lessons_category = interaction.guild.get_channel(await get_lessons_category_id(interaction.guild_id))
+        try:
+            for subject_channel in lessons_category.channels:
+                if subject_name.lower() in subject_channel.name:
+                    await subject_channel.delete()
+                    break
+        except:
+            pass
         await interaction.edit_original_message(embed=success_embed, view=None)
+        
+    @application_checks.has_permissions(administrator=True)
+    @slash_command(name="test")
+    async def test(self, interaction : Interaction):
+        for i in ["A", "B", "C", "D"]:
+            await interaction.guild.create_category(name=f"Section {i}")
+
 
     @application_checks.has_permissions(administrator=True)
     @subject.subcommand(name="list")
@@ -223,9 +281,11 @@ class Moderation(Cog):
         
         hac_id = await get_hac_id(guild_id=interaction.guild.id)
         hac_category = interaction.guild.get_channel(hac_id if hac_id else 0)
+        subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
+
         if hac_category:
             await interaction.response.send_message(
-                embed=help_embed, view=HelpView(client=self.client)
+                embed=help_embed, view=HelpView(client=self.client, subjects=subjects)
             )
         else:
             await interaction.response.send_message(embed=fail_embed)
@@ -233,7 +293,7 @@ class Moderation(Cog):
 
     @Cog.listener()
     async def on_message(self, message: Message):
-        lessons_category_id = 0 #to change
+        lessons_category_id = await get_lessons_category_id(message.guild.id)
         if message.author.id == self.client.user.id:
             return
         if (
@@ -242,10 +302,9 @@ class Moderation(Cog):
         ):
             await message.delete()
             await message.channel.send(
-                content=f"{message.author.mention} text messages aren't allowed in this channel",
+                content=f"{message.author.mention} Only messages containing links are allowed on this channel.",
                 delete_after=6,
             )
-
 
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="setup", description="Setup the bot")
