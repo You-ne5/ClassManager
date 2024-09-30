@@ -193,12 +193,6 @@ class Moderation(Cog):
         except:
             pass
         await interaction.edit_original_message(embed=success_embed, view=None)
-        
-    @application_checks.has_permissions(administrator=True)
-    @slash_command(name="test")
-    async def test(self, interaction : Interaction):
-        for i in ["A", "B", "C", "D"]:
-            await interaction.guild.create_category(name=f"Section {i}")
 
 
     @application_checks.has_permissions(administrator=True)
