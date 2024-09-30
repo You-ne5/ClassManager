@@ -65,7 +65,7 @@ async def get_announce_channel_id(guild_id: int):
 async def create_constant(interaction : Interaction, constant_name_in_db : str) -> None:
     db = DB()
     await db.load_db("main.db")
-
+    print(constant_name_in_db)
     if constant_name_in_db in ["HelpCategoryId", "HelpArchiveCategoryId", "LessonsCategoryId"]:
         category_name = "help" if constant_name_in_db == "HelpCategoryId" else "help archive" if constant_name_in_db == "HelpArchiveCategoryId" else "Lessons"
         created_constant = await interaction.guild.create_category(name=category_name)
