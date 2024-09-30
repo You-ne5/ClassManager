@@ -279,9 +279,12 @@ class Moderation(Cog):
 
         if hac_category:
             help_embed.description = "There are no subjects configured, use /subject_add to configure new subjects" if subjects else help_embed.description
-            await interaction.response.send_message(
-                embed=help_embed, view=HelpView(client=self.client, subjects=subjects) if subjects else None
-            )
+            if subjects:
+                await interaction.response.send_message(
+                    embed=help_embed, view=HelpView(client=self.client, subjects=subjects)
+                )
+            else:
+                await interaction.response.send_message(embed=help_embed)
         else:
             await interaction.response.send_message(embed=fail_embed)
 
