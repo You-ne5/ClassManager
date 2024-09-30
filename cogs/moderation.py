@@ -279,6 +279,7 @@ class Moderation(Cog):
 
         if hac_category:
             if subjects:
+                help_embed.title = "No subjects added !"
                 help_embed.description = "There are no subjects configured, use /subject_add to configure new subjects"
             if subjects:
                 await interaction.response.send_message(
