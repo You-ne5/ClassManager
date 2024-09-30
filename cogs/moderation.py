@@ -278,7 +278,7 @@ class Moderation(Cog):
         subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
 
         if hac_category:
-            if subjects:
+            if not subjects:
                 help_embed.title = "No subjects added !"
                 help_embed.description = "There are no subjects configured, use /subject_add to configure new subjects"
             if subjects:
