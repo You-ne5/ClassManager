@@ -482,6 +482,21 @@ class Moderation(Cog):
         )
 
         await interaction.edit_original_message(embed=success_embed, view=None)
+    
+
+    @application_checks.has_permissions(administrator=True)
+    @section.subcommand(name="list")
+    async def section_list(self, interaction : Interaction):
+        identifiers = await self.db.get_fetchall("SELECT Identifier FROM Sections WHERE GuildId=?", (interaction.guild_id,))
+        subjects = [f"- Section {identifier[0].upper()}" for identifier in identifiers]
+
+        list_embed = Embed(
+            title=f"List of Sections in {interaction.guild.name}",
+            description="\n".join(subjects) if subjects else "No Section yet",
+            color=Color.blue()
+        )
+        list_embed.set_thumbnail(url=interaction.guild.icon)
+        await interaction.response.send_message(embed=list_embed)
 
 
 def setup(client: Bot):
