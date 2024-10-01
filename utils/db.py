@@ -20,7 +20,9 @@ class DB:
                         HelpArchiveCategoryID INTERGER,
                         LessonsCategoryId INTERGER,
                         ExoChannelId INTERGER,
-                        AnnounceChannelId INTERGER
+                        AnnounceChannelId INTERGER,
+                        ValidationCategoryID INTEGER,
+                        StudentRoleId INTEGER
         )""")
 
         await self.curr.execute("""CREATE TABLE IF NOT EXISTS Subjects(
