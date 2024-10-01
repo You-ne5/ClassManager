@@ -28,6 +28,14 @@ class DB:
                         Name STRING NOT NULL,
                         Emoji STRING
         )""")
+
+
+        await self.curr.execute("""CREATE TABLE IF NOT EXISTS Sections(
+                        GuildId INTERGER NOT NULL,
+                        Identifier STRING NOT NULL,
+                        RoleId INTEGER NOT NULL,
+                        CategoryId INTEGER NOT NULL
+        )""")
         
     async def request(self, req: str, args: tuple = None):
         res =  await self.curr.execute(req, args)
