@@ -65,14 +65,20 @@ async def get_announce_channel_id(guild_id: int):
 async def create_constant(interaction : Interaction, constant_name_in_db : str) -> None:
     db = DB()
     await db.load_db("main.db")
+
     print(constant_name_in_db)
-    if constant_name_in_db in ["HelpCategoryId", "HelpArchiveCategoryId", "LessonsCategoryId"]:
-        category_name = "help" if constant_name_in_db == "HelpCategoryId" else "help archive" if constant_name_in_db == "HelpArchiveCategoryId" else "Lessons"
+
+    if "category" in constant_name_in_db.lower():
+        category_name = "help" if constant_name_in_db == "HelpCategoryId" else "help archive" if constant_name_in_db == "HelpArchiveCategoryId" else "Lessons" if constant_name_in_db == "LessonsCategoryId" else "Validation"
         created_constant = await interaction.guild.create_category(name=category_name)
 
-    elif constant_name_in_db in ["ExoChannelId", "AnnounceChannelId"]:
+    elif "channel" in constant_name_in_db.lower():
         channel_name = "📝exercices" if constant_name_in_db == "ExoChannelId" else "📢annonces" if constant_name_in_db == "AnnounceChannelId" else "unnamed channel"
         created_constant = await interaction.guild.create_text_channel(name=channel_name)
+    
+    elif "role" in constant_name_in_db.lower():
+        role_name = "Student role" if constant_name_in_db == "StudentRoleId" else "unnamed role"
+        created_constant = await interaction.guild.create_role(name=role_name)
 
     await db.request(f"UPDATE GuildsConstants SET {constant_name_in_db}=? WHERE GuildId=?", (created_constant.id, interaction.guild_id))
 

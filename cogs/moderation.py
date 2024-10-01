@@ -323,6 +323,8 @@ class Moderation(Cog):
             lessons_category = interaction.guild.get_channel(guild_constants[3])
             exo_channel = interaction.guild.get_channel(guild_constants[4])
             announce_channel = interaction.guild.get_channel(guild_constants[5])
+            validation_category = interaction.guild.get_channel(guild_constants[6] if guild_constants[6] else None)
+            student_role = interaction.guild.get_role(guild_constants[7] if guild_constants[7] else None)
 
             if not help_category:
                 await create_constant(interaction, "HelpCategoryId")
@@ -339,6 +341,12 @@ class Moderation(Cog):
             if not announce_channel:
                 await create_constant(interaction, "AnnounceChannelId")
                 constants_created.append("announce channel")
+            if not validation_category:
+                await create_constant(interaction, "ValidationCategoryID")
+                constants_created.append("Validation category")
+            if not student_role:
+                await create_constant(interaction, "StudentRoleId")
+                constants_created.append("Students role")
         else:
             await self.db.request("INSERT INTO 'GuildsConstants' VALUES (?,?,?,?,?,?)", (guild_id, None, None, None, None, None))
 
