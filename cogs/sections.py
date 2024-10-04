@@ -142,7 +142,6 @@ class Sections(Cog):
             return
         
         section_role_id, section_category_id = await self.db.get_fetchone("SELECT RoleId, CategoryId FROM 'Sections' WHERE GuildId=? AND Identifier=?", (interaction.guild_id, identifier.lower()))
-        print(section_role_id)
         section_role = interaction.guild.get_role(section_role_id)
         section_category : CategoryChannel = interaction.guild.get_channel(section_category_id)
         

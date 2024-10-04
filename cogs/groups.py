@@ -147,7 +147,6 @@ class Groups(Cog):
             return
         
         group_role_id, group_channel_id = await self.db.get_fetchone("SELECT RoleId, ChannelId FROM 'Groups' WHERE GuildId=? AND Number=?", (interaction.guild_id, group_number))
-        print(group_role_id)
         group_role = interaction.guild.get_role(group_role_id)
         group_channel = interaction.guild.get_channel(group_channel_id)
         

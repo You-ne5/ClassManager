@@ -14,7 +14,7 @@ from nextcord import (
 
 from config import EMBED_COLOR
 from utils.views import HelpPanel, Confirm
-from utils.functions import get_constant_id
+from utils.get_functions import get_constant_id
 from utils.db import DB
 
 class Subjects(Cog):
@@ -30,7 +30,6 @@ class Subjects(Cog):
     @Cog.listener()
     async def on_ready(self):
         await self.connect_db()
-        self.client.add_view(HelpPanel(client=self.client))
         return
 
 
@@ -158,7 +157,6 @@ class Subjects(Cog):
     @subject.subcommand(name="list")
     async def subject_list(self, interaction : Interaction):
         subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
-        print(subjects)
         subjects = [f"- {subject_emoji} {subject_name}" for subject_name, subject_emoji in subjects]
 
         list_embed = Embed(
