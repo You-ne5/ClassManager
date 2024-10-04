@@ -10,8 +10,9 @@ from nextcord import (
 )
 
 from config import EMBED_COLOR
-from utils.views import HelpView, HelpPanel
-from utils.functions import create_constant, get_constant_id
+from utils.views import HelpView, HelpPanel, ValidateView
+from utils.functions import create_constant
+from utils.get_functions import get_constant_id
 from utils.db import DB
 
 class Moderation(Cog):
@@ -28,7 +29,21 @@ class Moderation(Cog):
     async def on_ready(self):
         await self.connect_db()
         self.client.add_view(HelpPanel(client=self.client))
+        self.client.add_view(ValidateView())
+
         return
+
+    @application_checks.has_permissions(administrator=True)
+    @slash_command(name="setup_validation")
+    async def setup_validation(self, interaction : Interaction):
+        validation_embed = Embed(
+            title="Account Validation",
+            description=f"Welcome to `{interaction.guild.name}`, to acces the discord server validate your account using the button below.\n\nif you have trouble validating your account, send a message here, or tag a moderator",
+            color=EMBED_COLOR
+        )
+
+        await interaction.response.send_message("done", ephemeral=True)
+        await interaction.channel.send(embed=validation_embed, view=ValidateView())
 
 
     @application_checks.has_permissions(administrator=True)
@@ -148,12 +163,12 @@ class Moderation(Cog):
             if not announce_channel:
                 await create_constant(interaction, "AnnounceChannelId")
                 constants_created.append("announce channel")
-            if not validation_category:
-                await create_constant(interaction, "ValidationCategoryId")
-                constants_created.append("Validation category")
             if not student_role:
                 await create_constant(interaction, "StudentRoleId")
                 constants_created.append("Students role")
+            if not validation_category:
+                await create_constant(interaction, "ValidationCategoryId")
+                constants_created.append("Validation category")
         else:
             await self.db.request("INSERT INTO 'GuildsConstants' VALUES (?,?,?,?,?,?,?,?)", (guild_id, None, None, None, None, None, None, None))
 
