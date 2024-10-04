@@ -1,10 +1,11 @@
+from config import EMBED_COLOR, OWNER_ID
+from utils.db import DB
+from utils.functions import get_constant_id
+
 from nextcord import *
 from nextcord.interactions import Interaction
-from config import EMBED_COLOR, OWNER_ID
 from nextcord.ext.commands import Bot
-from utils.functions import get_hac_id
-from utils.db import DB
-from utils.functions import get_help_category_id
+
 
 class Confirm(ui.View):
     def __init__(self):
@@ -97,7 +98,7 @@ class HelpPanel(ui.View):
             if confirm_view.value:
 
                 perms = {interaction.guild.default_role : PermissionOverwrite(view_channel=True, send_messages=False)}
-                HELP_ARCHIVE_CATEGORY_ID = await get_hac_id(interaction.guild.id)
+                HELP_ARCHIVE_CATEGORY_ID = await get_constant_id(interaction.guild.id, "HelpArchiveCategoryId")
                 help_archive_category : CategoryChannel = interaction.guild.get_channel(HELP_ARCHIVE_CATEGORY_ID)
                 archive_channel_name = f"{interaction.channel.name}-1"
 

@@ -10,7 +10,7 @@ from nextcord import (
 
 from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel
-from utils.functions import message_verif, get_help_category_id, get_lessons_category_id
+from utils.functions import message_verif, get_constant_id
 from utils.db import DB
 
 class Events(Cog):
@@ -27,6 +27,10 @@ class Events(Cog):
     async def on_ready(self):
         await self.connect_db()
         return
+    
+    @Cog.listener()
+    async def on_member_join(self, member : Member):
+        validation_category = get_constant_id(member.guild.id, "ValidationCategoryId")
 
 
     @Cog.listener()
@@ -34,7 +38,7 @@ class Events(Cog):
         if not interaction.data.get("custom_id") == "help_subject":
             return
         
-        help_category : CategoryChannel = interaction.guild.get_channel(await get_help_category_id(interaction.guild_id))
+        help_category : CategoryChannel = interaction.guild.get_channel(await get_constant_id(interaction.guild_id, "HelpCategoryId"))
         user_name = interaction.user.nick.split()[0] if interaction.user.nick else interaction.user.name
         help_channel = await help_category.create_text_channel(f"{user_name}-{interaction.data["values"][0]}")
 
@@ -76,7 +80,7 @@ class Events(Cog):
         if not message.guild:
             return
         
-        lessons_category_id = await get_lessons_category_id(message.guild.id)
+        lessons_category_id = await get_constant_id(message.guild.id, "LessonsCategoryId")
         channel = message.channel
         alert_embed = Embed(
             title="Invalid message", 

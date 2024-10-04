@@ -15,7 +15,7 @@ from nextcord import (
 
 from config import EMBED_COLOR
 from utils.views import HelpView, HelpPanel, Confirm
-from utils.functions import get_hac_id, message_verif, create_constant, get_help_category_id, get_lessons_category_id
+from utils.functions import create_constant, get_constant_id
 from utils.db import DB
 
 class Moderation(Cog):
@@ -91,7 +91,7 @@ class Moderation(Cog):
                 subject_emoji,
             ),
         )
-        lessons_category = interaction.guild.get_channel(await get_lessons_category_id(interaction.guild_id))
+        lessons_category = interaction.guild.get_channel(await get_constant_id(interaction.guild_id, "LessonsCategoryId"))
         await lessons_category.create_text_channel(name=f"{subject_emoji} {subject_name.lower()}")
         await interaction.edit_original_message(embed=success_embed, view=None)
 
@@ -144,7 +144,7 @@ class Moderation(Cog):
             ),
         )
 
-        lessons_category = interaction.guild.get_channel(await get_lessons_category_id(interaction.guild_id))
+        lessons_category = interaction.guild.get_channel(await get_constant_id(interaction.guild_id, "LessonsCategoryId"))
         try:
             for subject_channel in lessons_category.channels:
                 if subject_name.lower() in subject_channel.name:
@@ -233,7 +233,7 @@ class Moderation(Cog):
                 color=Color.red()
             )
         
-        hac_id = await get_hac_id(guild_id=interaction.guild.id)
+        hac_id = await get_constant_id(interaction.guild.id, "HelpArchiveCategoryId")
         hac_category = interaction.guild.get_channel(hac_id if hac_id else 0)
         subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
 

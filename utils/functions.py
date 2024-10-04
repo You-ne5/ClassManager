@@ -2,65 +2,16 @@ from nextcord import Message, Interaction, PermissionOverwrite
 import validators
 from utils.db import DB
 
-async def get_hac_id(guild_id: int):  # hac = Help Archive Category
+async def get_constant_id(guild_id: int, constant_name_in_db : str):  # hac = Help Archive Category
 
     db = DB()
     await db.load_db("main.db")
 
-    HAC_id = await db.get_fetchone(
-        "SELECT HelpArchiveCategoryID FROM GuildsConstants WHERE GuildID=?", (guild_id,)
+    constant_id = await db.get_fetchone(
+        f"SELECT {constant_name_in_db} FROM GuildsConstants WHERE GuildID=?", (guild_id,)
     )
-    HAC_id = HAC_id[0] if HAC_id else None
-    return HAC_id
-
-
-async def get_help_category_id(guild_id: int) -> int | None:
-
-    db = DB()
-    await db.load_db("main.db")
-
-    help_category_id = await db.get_fetchone(
-        "SELECT HelpCategoryId FROM GuildsConstants WHERE GuildId=?", (guild_id,)
-    )
-    help_category_id = help_category_id[0] if help_category_id else None
-    return help_category_id
-
-
-async def get_lessons_category_id(guild_id: int): 
-
-    db = DB()
-    await db.load_db("main.db")
-
-    lessons_category_id = await db.get_fetchone(
-        "SELECT LessonsCategoryId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
-    )
-    lessons_category_id = lessons_category_id[0] if lessons_category_id else None
-    return lessons_category_id
-
-
-async def get_exo_channel_id(guild_id: int): 
-
-    db = DB()
-    await db.load_db("main.db")
-
-    exo_channel_id = await db.get_fetchone(
-        "SELECT ExoChannelId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
-    )
-    exo_channel_id = exo_channel_id[0] if exo_channel_id else None
-    return exo_channel_id
-
-
-async def get_announce_channel_id(guild_id: int): 
-
-    db = DB()
-    await db.load_db("main.db")
-
-    announce_channel_id = await db.get_fetchone(
-        "SELECT AnnounceChannelId FROM GuildsConstants WHERE GuildID=?", (guild_id,)
-    )
-    announce_channel_id = announce_channel_id[0] if announce_channel_id else None
-    return announce_channel_id
-
+    constant_id = constant_id[0] if constant_id else None
+    return constant_id
 
 async def create_constant(interaction : Interaction, constant_name_in_db : str) -> None:
     db = DB()
@@ -85,8 +36,8 @@ async def create_constant(interaction : Interaction, constant_name_in_db : str) 
         created_constant = await interaction.guild.create_text_channel(name=channel_name)
     
     elif "role" in constant_name_in_db.lower():
-        role_name = "Student role" if constant_name_in_db == "StudentRoleId" else "unnamed role"
-        created_constant = await interaction.guild.create_role(name=role_name)
+        role_name = "Student" if constant_name_in_db == "StudentRoleId" else "unnamed role"
+        created_constant = await interaction.guild.create_role(name=role_name, color=0x00FFFF)
 
     await db.request(f"UPDATE GuildsConstants SET {constant_name_in_db}=? WHERE GuildId=?", (created_constant.id, interaction.guild_id))
 
