@@ -84,7 +84,7 @@ class Groups(Cog):
 
         section_category_id = await self.db.get_fetchone("SELECT CategoryId FROM Sections WHERE GuildId=? AND Identifier=?", (interaction.guild_id, section_id,))
         if not section_category_id:
-            await interaction.response.send_message(content=f"Section '{section_id}' not found, please choose a valid id", ephemeral=True)
+            await interaction.edit_original_message(content=f"Section '{section_id}' not found, please choose a valid id", ephemeral=True)
             return
 
         section_category = interaction.guild.get_channel(section_category_id[0])
@@ -135,8 +135,8 @@ class Groups(Cog):
             return
         
         confirm_view = Confirm()
-        await interaction.response.send_message(
-            embed=confirm_embed, view=confirm_view, ephemeral=True
+        await interaction.response.(
+            embed=confisend_messagerm_embed, view=confirm_view, ephemeral=True
         )
 
         await confirm_view.wait()
