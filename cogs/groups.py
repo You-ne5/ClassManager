@@ -62,9 +62,14 @@ class Groups(Cog):
             fail_embed.description = f"The Group Number {group_number} already exists, please try again using another number"
             await interaction.response.send_message(embed=fail_embed, ephemeral=True)
             return
+
+        section_category_id = await self.db.get_fetchone("SELECT CategoryId FROM Sections WHERE GuildId=? AND Identifier=?", (interaction.guild_id, section_id,))
+        if not section_category_id:
+            await interaction.response.send_message(content=f"Section '{section_id}' not found, please choose a valid id", ephemeral=True)
+            return
         
         confirm_view = Confirm()
-        await interaction.response.send_message(
+        first_message = await interaction.response.send_message(
             embed=confirm_embed, view=confirm_view, ephemeral=True
         )
 
@@ -72,7 +77,7 @@ class Groups(Cog):
 
         if not confirm_view.value:
             fail_embed.title="Operation cancelled"
-            await interaction.edit_original_message(embed=fail_embed, view=None)
+            await first_message.edit(embed=fail_embed, view=None)
             return
         
         group_role = await interaction.guild.create_role(name=f"group {group_number}")
@@ -81,11 +86,6 @@ class Groups(Cog):
             interaction.guild.default_role : PermissionOverwrite(view_channel=False, send_messages=False),
             group_role : PermissionOverwrite(view_channel=True, send_messages=True)
         }
-
-        section_category_id = await self.db.get_fetchone("SELECT CategoryId FROM Sections WHERE GuildId=? AND Identifier=?", (interaction.guild_id, section_id,))
-        if not section_category_id:
-            await interaction.edit_original_message(content=f"Section '{section_id}' not found, please choose a valid id", ephemeral=True)
-            return
 
         section_category = interaction.guild.get_channel(section_category_id[0])
         group_channel = await section_category.create_text_channel(
@@ -135,8 +135,8 @@ class Groups(Cog):
             return
         
         confirm_view = Confirm()
-        await interaction.response.(
-            embed=confisend_messagerm_embed, view=confirm_view, ephemeral=True
+        await interaction.response.send_message(
+            embed=confirm_embed, view=confirm_view, ephemeral=True
         )
 
         await confirm_view.wait()
