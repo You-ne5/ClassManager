@@ -40,47 +40,6 @@ class Moderation(Cog):
         return
 
 
-    @Cog.listener()
-    async def on_interaction(self, interaction : Interaction):
-        if not interaction.data.get("custom_id") == "help_subject":
-            return
-        
-        help_category : CategoryChannel = interaction.guild.get_channel(await get_help_category_id(interaction.guild_id))
-        user_name = interaction.user.nick.split()[0] if interaction.user.nick else interaction.user.name
-        help_channel = await help_category.create_text_channel(f"{user_name}-{interaction.data["values"][0]}")
-
-        self.db = DB()
-        await self.db.load_db("main.db")
-
-        await self.db.request("INSERT INTO HelpChannels Values (?,?,?)", (interaction.guild.id, help_channel.id, interaction.user.id))
-
-        help_channel_embed = Embed(
-            title=f"{user_name}'s Help channel",
-            description="explain your problem in one message (providing pictures), a classmate will come to help you",
-            color=EMBED_COLOR
-        )
-        try:
-            await interaction.response.send_message(f"help channel created: {help_channel.mention}", ephemeral=True, delete_after=5)
-        except:
-            pass
-
-        await help_channel.send(embed=help_channel_embed, content=f"{interaction.user.mention}", view=HelpPanel(client=self.client))
-        
-        subjects = await self.db.get_fetchall("SELECT Name, Emoji FROM Subjects WHERE GuildId=?", (interaction.guild_id,))
-        await interaction.message.edit(view=HelpView(client=self.client, subjects=subjects))
-
-        def is_allowed(message: Message):
-            return message.author.id == interaction.user.id and message.channel.id == help_channel.id
-
-        try:
-            await self.client.wait_for("message", timeout=600, check=is_allowed)
-        except TimeoutError:                
-            await help_channel.delete()
-            return
-        else:
-            await help_channel.send(f"@everyone", delete_after=2)
-
-
     @application_checks.has_permissions(administrator=True)
     @subject.subcommand(name="add")
     async def subject_add(
@@ -292,21 +251,6 @@ class Moderation(Cog):
             await interaction.response.send_message(embed=fail_embed)
 
 
-    @Cog.listener()
-    async def on_message(self, message: Message):
-        lessons_category_id = await get_lessons_category_id(message.guild.id)
-        if message.author.id == self.client.user.id:
-            return
-        if (
-            message.channel.category.id == lessons_category_id
-            and not message_verif(message)
-        ):
-            await message.delete()
-            await message.channel.send(
-                content=f"{message.author.mention} Only messages containing links are allowed on this channel.",
-                delete_after=6,
-            )
-
     @application_checks.has_permissions(administrator=True)
     @slash_command(name="setup", description="Setup the bot")
     async def setup(self, interaction : Interaction):
@@ -314,6 +258,8 @@ class Moderation(Cog):
         guild_id = interaction.guild_id
         constants_created = []
         return_embed = Embed(title="Bot has been Setup seccessfully", color=EMBED_COLOR)
+        loading_embed = Embed(title="Setup in process...", color=EMBED_COLOR)
+        loading_message = await interaction.response.send_message(embed=loading_embed)
 
         guild_constants = await self.db.get_fetchone("SELECT * FROM GuildsConstants WHERE GuildId=?", (guild_id,))
 
@@ -342,15 +288,15 @@ class Moderation(Cog):
                 await create_constant(interaction, "AnnounceChannelId")
                 constants_created.append("announce channel")
             if not validation_category:
-                await create_constant(interaction, "ValidationCategoryID")
+                await create_constant(interaction, "ValidationCategoryId")
                 constants_created.append("Validation category")
             if not student_role:
                 await create_constant(interaction, "StudentRoleId")
                 constants_created.append("Students role")
         else:
-            await self.db.request("INSERT INTO 'GuildsConstants' VALUES (?,?,?,?,?,?)", (guild_id, None, None, None, None, None))
+            await self.db.request("INSERT INTO 'GuildsConstants' VALUES (?,?,?,?,?,?,?,?)", (guild_id, None, None, None, None, None, None, None))
 
-            constants_created = ["HelpCategoryId", "HelpArchiveCategoryID", "LessonsCategoryId", "ExoChannelId", "AnnounceChannelId"]
+            constants_created = ["HelpCategoryId", "HelpArchiveCategoryID", "LessonsCategoryId", "ExoChannelId", "AnnounceChannelId", "ValidationCategoryId", "StudentRoleId"]
 
             for constant_name in constants_created:
                 await create_constant(interaction, constant_name)
@@ -358,7 +304,8 @@ class Moderation(Cog):
         if constants_created:
             return_embed.description = "**Added Constants:**\n"
             return_embed.description += "\n".join([f"- {s}" for s in constants_created])
-        await interaction.response.send_message(embed=return_embed)
+
+        await loading_message.edit(embed=return_embed)
     
 
     @slash_command(name="section")
