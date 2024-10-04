@@ -32,34 +32,38 @@ class Groups(Cog):
         await self.connect_db()
         return
     
-    @slash_command(name="section")
-    async def section(self, interaction : Interaction):
+    @slash_command(name="group")
+    async def group(self, interaction : Interaction):
         return
     
-    @section.subcommand(name="add", description="Creates a section, with a role and a specific category")
-    async def section_add(
+    @group.subcommand(name="add", description="Creates a group, with a role and a specific category")
+    async def group_add(
         self, 
         interaction : Interaction, 
-        identifier : str
+        group_number : int,
+        section_id : str
         ):
+
+        section_id = section_id.lower()
+
         confirm_embed = Embed(
             title="Are you sure of these informations?",
-            description=f"``Section Identifier:`` {identifier}",
+            description=f"``group number:`` {str(group_number)}",
             colour=EMBED_COLOR,
         )
         fail_embed = Embed(color=EMBED_COLOR)
         success_embed = Embed(
-            title="Section created !",
-            description=f"The section '{identifier}' has been created !",
+            title="group created !",
+            description=f"The group '{group_number}' has been created !",
             color=EMBED_COLOR,
         )
 
-        existing_identifiers = await self.db.get_fetchall("SELECT Identifier FROM 'Sections' WHERE GuildId=?", (interaction.guild_id,))
-        existing_identifiers = [name[0].lower() for name in existing_identifiers]
+        existing_numbers = await self.db.get_fetchall("SELECT Number FROM 'Groups' WHERE GuildId=?", (interaction.guild_id,))
+        existing_numbers = [name[0] for name in existing_numbers]
 
-        if identifier.lower() in existing_identifiers:
-            fail_embed.title = "Section already exists"
-            fail_embed.description = f"The Section '{identifier}' already exists, please try again using another identifier"
+        if group_number in existing_numbers:
+            fail_embed.title = "Group already exists"
+            fail_embed.description = f"The Group Number {group_number} already exists, please try again using another number"
             await interaction.response.send_message(embed=fail_embed, ephemeral=True)
             return
         
@@ -75,58 +79,62 @@ class Groups(Cog):
             await interaction.edit_original_message(embed=fail_embed, view=None)
             return
         
-        section_role = await interaction.guild.create_role(name=f"Section {identifier.upper()}")
+        group_role = await interaction.guild.create_role(name=f"group {group_number}")
 
         category_perms = {
             interaction.guild.default_role : PermissionOverwrite(view_channel=False, send_messages=False),
-            section_role : PermissionOverwrite(view_channel=True, send_messages=True)
+            group_role : PermissionOverwrite(view_channel=True, send_messages=True)
         }
-        section_category = await interaction.guild.create_category(
-            name=f"Section {identifier.upper()}",
+
+        section_category_id = await self.db.get_fetchone("SELECT CategoryId FROM Sections WHERE GuildId=? AND Identifier=?", (interaction.guild_id, section_id,))
+        if not section_category_id:
+            await interaction.response.send_message(content=f"Section '{section_id}' not found, please choose a valid id", ephemeral=True)
+            return
+
+        section_category = interaction.guild.get_channel(section_category_id[0])
+        group_channel = await section_category.create_text_channel(
+            name=f"Group {group_number}",
             overwrites=category_perms
             )
-        
-        await section_category.create_text_channel(name=f"✍conversation-s-{identifier}")
-        await section_category.create_text_channel(name=f"❓questions")
-        await section_category.create_voice_channel(name=f"Study class {identifier}")
 
         await self.db.request(
-            """INSERT INTO 'Sections'('GuildId', 'Identifier', 'RoleId', 'CategoryId') VALUES(?,?,?,?)""",
+            """INSERT INTO 'Groups'('GuildId', 'Number', 'SectionId', 'RoleId', 'ChannelId') VALUES(?,?,?,?,?)""",
             (
                 interaction.guild_id,
-                identifier.lower(),
-                section_role.id,
-                section_category.id
+                group_number,
+                section_id,
+                group_role.id,
+                group_channel.id
             ),
         )
 
         await interaction.edit_original_message(embed=success_embed, view=None)
 
 
-    @section.subcommand(name="remove", description="Removes a section")
-    async def section_remove(
+    @group.subcommand(name="remove", description="Removes a Group")
+    async def group_remove(
         self, 
         interaction : Interaction, 
-        identifier : str
+        group_number : int
         ):
         confirm_embed = Embed(
-            title="Are you sure You want to delete this section?",
-            description=f"``Section :`` {identifier}",
+            title="Are you sure You want to delete this group?",
+            description=f"``group :`` {group_number}",
             colour=EMBED_COLOR,
         )
         fail_embed = Embed(color=EMBED_COLOR)
         success_embed = Embed(
             title="Section Deleted !",
-            description=f"The section '{identifier}' has been deleted !",
+            description=f"The group {group_number} has been deleted !",
             color=EMBED_COLOR,
         )
 
-        section_info = await self.db.get_fetchall("SELECT Identifier FROM 'Sections' WHERE GuildId=?", (interaction.guild_id,))
-        existing_identifiers = [name[0].lower() for name in section_info]
+        groups_numbers = await self.db.get_fetchall("SELECT Number FROM 'Groups' WHERE GuildId=?", (interaction.guild_id,))
+        groups_numbers = [name[0] for name in groups_numbers]
 
-        if not identifier.lower() in existing_identifiers:
-            fail_embed.title = "Section doesn't exist!"
-            fail_embed.description = f"The Section '{identifier}' does not exist, please try again using another identifier"
+        if not group_number in groups_numbers:
+            fail_embed.title = "Group doesn't exist!"
+            fail_embed.description = f"The Group {group_number} does not exist, please try again using another number"
             await interaction.response.send_message(embed=fail_embed, ephemeral=True)
             return
         
@@ -142,36 +150,33 @@ class Groups(Cog):
             await interaction.edit_original_message(embed=fail_embed, view=None)
             return
         
-        section_role_id, section_category_id = await self.db.get_fetchone("SELECT RoleId, CategoryId FROM 'Sections' WHERE GuildId=? AND Identifier=?", (interaction.guild_id, identifier.lower()))
-        print(section_role_id)
-        section_role = interaction.guild.get_role(section_role_id)
-        section_category : CategoryChannel = interaction.guild.get_channel(section_category_id)
+        group_role_id, group_channel_id = await self.db.get_fetchone("SELECT RoleId, ChannelId FROM 'Groups' WHERE GuildId=? AND Number=?", (interaction.guild_id, group_number))
+        print(group_role_id)
+        group_role = interaction.guild.get_role(group_role_id)
+        group_channel = interaction.guild.get_channel(group_channel_id)
         
         try:
-            for channel in section_category.channels:
-                await channel.delete()
-
-            await section_role.delete()
-            await section_category.delete()
+            await group_role.delete()
+            await group_channel.delete()
         except:
             pass
 
         await self.db.request(
-            """Delete FROM 'Sections' WHERE GuildId=? AND Identifier=?""", (interaction.guild_id, identifier.lower()),
+            """Delete FROM 'Groups' WHERE GuildId=? AND Number=?""", (interaction.guild_id, group_number),
         )
 
         await interaction.edit_original_message(embed=success_embed, view=None)
     
 
     @application_checks.has_permissions(administrator=True)
-    @section.subcommand(name="list")
-    async def section_list(self, interaction : Interaction):
-        identifiers = await self.db.get_fetchall("SELECT Identifier FROM Sections WHERE GuildId=?", (interaction.guild_id,))
-        subjects = [f"- Section {identifier[0].upper()}" for identifier in identifiers]
+    @group.subcommand(name="list")
+    async def group_list(self, interaction : Interaction):
+        groups_numbers = await self.db.get_fetchall("SELECT Number FROM Groups WHERE GuildId=?", (interaction.guild_id,))
+        groups = [f"- Group {number[0]}" for number in groups_numbers]
 
         list_embed = Embed(
-            title=f"List of Sections in {interaction.guild.name}",
-            description="\n".join(subjects) if subjects else "No Section yet",
+            title=f"List of Groups in {interaction.guild.name}",
+            description="\n".join(groups) if groups else "No group yet",
             color=Color.blue()
         )
         list_embed.set_thumbnail(url=interaction.guild.icon)
