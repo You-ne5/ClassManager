@@ -9,7 +9,7 @@ from nextcord import (
 )
 
 from config import EMBED_COLOR
-from utils.views import HelpView, HelpPanel, ValidationView
+from utils.views import HelpView, HelpPanel, ValidateView
 from utils.functions import message_verif, get_constant_id
 from utils.db import DB
 
@@ -44,7 +44,7 @@ class Events(Cog):
         validation_embed.set_thumbnail(member.avatar)
 
         validation_channel = await validation_category.create_text_channel(name=f"validation {member.name}", overwrites=validation_channel_perms)
-        await validation_channel.send(embed=validation_embed, view=ValidationView())
+        await validation_channel.send(embed=validation_embed, view=ValidateView())
 
 
     @Cog.listener()
