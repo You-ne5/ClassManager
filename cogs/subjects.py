@@ -17,7 +17,7 @@ from utils.views import HelpPanel, Confirm
 from utils.functions import get_constant_id
 from utils.db import DB
 
-class Moderation(Cog):
+class Subjects(Cog):
     def __init__(self, client: Bot) -> None:
         self.client = client
 
@@ -171,4 +171,4 @@ class Moderation(Cog):
 
 
 def setup(client: Bot):
-    client.add_cog(Moderation(client))
+    client.add_cog(Subjects(client))
