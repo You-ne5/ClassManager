@@ -3,9 +3,6 @@ from nextcord.ext import application_checks
 from nextcord import (
     Embed,
     Interaction,
-    Message,
-    CategoryChannel,
-    Member,
     Color,
     PermissionOverwrite,
     slash_command
@@ -14,7 +11,6 @@ from nextcord import (
 
 from config import EMBED_COLOR
 from utils.views import Confirm
-from utils.functions import get_constant_id
 from utils.db import DB
 
 class Groups(Cog):
