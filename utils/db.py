@@ -31,6 +31,14 @@ class DB:
                         Emoji STRING
         )""")
 
+        await self.curr.execute("""CREATE TABLE IF NOT EXISTS Groups(
+                        GuildId INTERGER NOT NULL,
+                        Number Integer NOT NULL,
+                        SectionId STRING NOT NULL,
+                        RoleId INTEGER NOT NULL,
+                        ChannelId INTEGER NOT NULL
+        )""")
+
 
         await self.curr.execute("""CREATE TABLE IF NOT EXISTS Sections(
                         GuildId INTERGER NOT NULL,
