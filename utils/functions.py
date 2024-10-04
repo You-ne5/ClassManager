@@ -1,26 +1,22 @@
 from nextcord import Message, Interaction, PermissionOverwrite
 import validators
 from utils.db import DB
-
-async def get_constant_id(guild_id: int, constant_name_in_db : str):  # hac = Help Archive Category
-
-    db = DB()
-    await db.load_db("main.db")
-
-    constant_id = await db.get_fetchone(
-        f"SELECT {constant_name_in_db} FROM GuildsConstants WHERE GuildID=?", (guild_id,)
-    )
-    constant_id = constant_id[0] if constant_id else None
-    return constant_id
+from utils.views import ValidateView
+from nextcord import Embed
+from config import EMBED_COLOR
+from utils.get_functions import get_constant_id
 
 async def create_constant(interaction : Interaction, constant_name_in_db : str) -> None:
     db = DB()
     await db.load_db("main.db")
 
-    print(constant_name_in_db)
     
+    student_role_id = await get_constant_id(interaction.guild_id, "StudentRoleId")
+    student_role = interaction.guild.get_role(student_role_id)
+
     validation_category_perms = {
-            interaction.guild.default_role : PermissionOverwrite(view_channel=False, send_messages=False),
+            interaction.guild.default_role : PermissionOverwrite(view_channel=True, send_messages=False),
+            student_role : PermissionOverwrite(view_channel=False, send_messages=False)
         }
 
     if "category" in constant_name_in_db.lower():
@@ -28,6 +24,14 @@ async def create_constant(interaction : Interaction, constant_name_in_db : str) 
         
         if constant_name_in_db == "ValidationCategoryId":
             created_constant = await interaction.guild.create_category(name=category_name, overwrites=validation_category_perms)
+            validation_channel = await created_constant.create_text_channel(name="Validation channel")
+            validation_embed = Embed(
+                title="Account Validation",
+                description=f"Welcome to `{interaction.guild.name}`, to acces the discord server validate your account using the button below.\n\nif you have trouble validating your account, send a message to a moderator",
+                color=EMBED_COLOR
+            )
+            await interaction.edit_original_message(content="done", embed=None)
+            await validation_channel.send(embed=validation_embed, view=ValidateView())
         else:
             created_constant = await interaction.guild.create_category(name=category_name)
 
