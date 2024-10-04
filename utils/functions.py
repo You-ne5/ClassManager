@@ -1,4 +1,4 @@
-from nextcord import Message, Interaction
+from nextcord import Message, Interaction, PermissionOverwrite
 import validators
 from utils.db import DB
 
@@ -67,10 +67,18 @@ async def create_constant(interaction : Interaction, constant_name_in_db : str) 
     await db.load_db("main.db")
 
     print(constant_name_in_db)
+    
+    validation_category_perms = {
+            interaction.guild.default_role : PermissionOverwrite(view_channel=False, send_messages=False),
+        }
 
     if "category" in constant_name_in_db.lower():
         category_name = "help" if constant_name_in_db == "HelpCategoryId" else "help archive" if constant_name_in_db == "HelpArchiveCategoryId" else "Lessons" if constant_name_in_db == "LessonsCategoryId" else "Validation"
-        created_constant = await interaction.guild.create_category(name=category_name)
+        
+        if constant_name_in_db == "ValidationCategoryId":
+            created_constant = await interaction.guild.create_category(name=category_name, overwrites=validation_category_perms)
+        else:
+            created_constant = await interaction.guild.create_category(name=category_name)
 
     elif "channel" in constant_name_in_db.lower():
         channel_name = "📝exercices" if constant_name_in_db == "ExoChannelId" else "📢annonces" if constant_name_in_db == "AnnounceChannelId" else "unnamed channel"
