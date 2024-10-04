@@ -1,6 +1,6 @@
 from config import EMBED_COLOR, OWNER_ID
 from utils.db import DB
-from utils.functions import get_constant_id
+from utils.get_functions import get_constant_id
 
 from nextcord import *
 from nextcord.interactions import Interaction
@@ -28,8 +28,9 @@ class ValidateView(ui.View):
         super().__init__()
         self.value = None
 
-    @ui.button(label="Validate", style=ButtonStyle.green)
+    @ui.button(label="Validate", style=ButtonStyle.green, custom_id=f"validate-button")
     async def validate(self, button: ui.Button, interaction: Interaction):
+        
         db = DB()
         await db.load_db("main.db")
 
@@ -165,6 +166,7 @@ class HelpPanel(ui.View):
 
 class ValidationModal(ui.Modal):
     def __init__(self, guild_sections: list, guild_groups : list):
+        guild_groups = [str(num) for num in guild_groups]
         super().__init__(
             title="Validation Form",
             custom_id="validation-modal",
@@ -196,3 +198,59 @@ class ValidationModal(ui.Modal):
             required=True,
             placeholder=f"Enter your Group number ({', '.join(guild_groups)})",
         )
+
+        self.add_item(self.first_name)
+        self.add_item(self.last_name)
+        if guild_sections:
+            self.add_item(self.section)
+        if guild_groups:
+            self.add_item(self.group)
+
+
+    async def callback(self, interaction : Interaction):
+        db = DB()
+        await db.load_db("main.db")
+
+        fail_embed = Embed(
+            color=EMBED_COLOR
+        )
+        first_name, last_name, section_identifier, group_number = self.first_name.value, self.last_name.value, self.section.value.lower(), int(self.group.value)
+        
+        group_info = await db.get_fetchone("SELECT SectionId, RoleId FROM Groups WHERE GuildId=? AND Number=?", (interaction.guild_id, group_number,))
+        section_role_id = await db.get_fetchone("SELECT RoleId FROM Sections WHERE GuildId=? AND Identifier=?", (interaction.guild_id, section_identifier,))
+        student_role_id = await db.get_fetchone("SELECT StudentRoleId FROM GuildsConstants WHERE GuildId=?", (interaction.guild_id,))
+        if student_role_id:
+            student_role_id = student_role_id[0]
+
+        if (not section_role_id) and section_identifier:
+            fail_embed.title = "Invalid Section"
+            fail_embed.description = f"The section {section_identifier} does not exist, please try again using a valid Identifier"
+    
+            await interaction.response.send_message(embed=fail_embed, ephemeral=True)
+            return
+        section_role_id = section_role_id[0]
+        
+        if (not group_info) and group_number:
+            fail_embed.title = "Invalid Group"
+            fail_embed.description = f"The Group {group_number} does not exist, please try again using a valid Number"
+    
+            await interaction.response.send_message(embed=fail_embed, ephemeral=True)
+            return
+        group_section_identifier, group_role_id = group_info
+
+        if group_section_identifier != section_identifier:
+            fail_embed.title = "Invalid Group or Section"
+            fail_embed.description = f"The Group {group_number} is not in the section {section_identifier}, try again using valid infomation"
+    
+            await interaction.response.send_message(embed=fail_embed, ephemeral=True)
+            return
+        
+        section_role = interaction.guild.get_role(section_role_id)
+        group_role = interaction.guild.get_role(group_role_id)
+        student_role = interaction.guild.get_role(student_role_id)
+
+        await interaction.user.edit(nick=f"{first_name} {last_name}")
+
+        for role in [section_role, group_role, student_role]:
+            if role:
+                await interaction.user.add_roles(role)
