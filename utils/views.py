@@ -23,7 +23,7 @@ class Confirm(ui.View):
         self.stop()
 
 
-class Confirm(ui.View):
+class ValidateView(ui.View):
     def __init__(self):
         super().__init__()
         self.value = None
