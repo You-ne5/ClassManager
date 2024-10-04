@@ -21,7 +21,7 @@ class DB:
                         LessonsCategoryId INTERGER,
                         ExoChannelId INTERGER,
                         AnnounceChannelId INTERGER,
-                        ValidationCategoryID INTEGER,
+                        ValidationCategoryId INTEGER,
                         StudentRoleId INTEGER
         )""")
 
