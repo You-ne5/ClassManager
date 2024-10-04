@@ -9,8 +9,9 @@ from nextcord import (
 )
 
 from config import EMBED_COLOR
-from utils.views import HelpView, HelpPanel, ValidateView
-from utils.functions import message_verif, get_constant_id
+from utils.views import HelpView, HelpPanel, ValidateView, ValidationModal
+from utils.functions import message_verif
+from utils.get_functions import get_constant_id
 from utils.db import DB
 
 class Events(Cog):
@@ -27,24 +28,6 @@ class Events(Cog):
     async def on_ready(self):
         await self.connect_db()
         return
-    
-    @Cog.listener()
-    async def on_member_join(self, member : Member):
-        validation_category : CategoryChannel = member.guild.get_channel(await get_constant_id(member.guild.id, "ValidationCategoryId"))
-
-        validation_channel_perms = {
-            member.guild.default_role : PermissionOverwrite(view_channel=False, send_messages=False),
-            member : PermissionOverwrite(view_channel=True, send_messages=True)
-        }  
-        validation_embed = Embed(
-            title="Account Validation",
-            description=f"Welcome to `{member.guild.name}`, to acces the discord server validate your account using the button below.\n\nif you have trouble validating your account, send a message here, or tag a moderator",
-            color=EMBED_COLOR
-        )
-        validation_embed.set_thumbnail(member.avatar)
-
-        validation_channel = await validation_category.create_text_channel(name=f"validation {member.name}", overwrites=validation_channel_perms)
-        await validation_channel.send(embed=validation_embed, view=ValidateView())
 
 
     @Cog.listener()
