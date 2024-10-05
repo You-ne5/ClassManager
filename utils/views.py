@@ -25,8 +25,7 @@ class Confirm(ui.View):
 
 class ValidateView(ui.View):
     def __init__(self):
-        super().__init__()
-        self.value = None
+        super().__init__(timeout=None)
 
     @ui.button(label="Validate", style=ButtonStyle.green, custom_id=f"validate-button")
     async def validate(self, button: ui.Button, interaction: Interaction):
