@@ -7,10 +7,13 @@ from nextcord import (
     Color,
     Interaction,
     TextChannel,
+    Member,
+    SlashOption,
+    Attachment
 )
 
 from config import EMBED_COLOR
-from utils.views import HelpView, HelpPanel, ValidateView
+from utils.views import HelpView, HelpPanel, ValidateView, Confirm
 from utils.functions import create_constant
 from utils.get_functions import get_constant_id
 from utils.db import DB
@@ -44,6 +47,74 @@ class Moderation(Cog):
 
         await interaction.response.send_message("done", ephemeral=True)
         await interaction.channel.send(embed=validation_embed, view=ValidateView())
+
+    @application_checks.has_permissions(administrator=True)
+    @slash_command(name="send")
+    async def send(
+        self, 
+        interaction: Interaction,
+        title : str = SlashOption(required=True, name="title"),
+        description : str = SlashOption(required=False, name="description"),
+        content : str = SlashOption(required=False, name="content"),
+        image : Attachment = SlashOption(required=False, name= "image"),
+        channel1 : TextChannel = SlashOption(required=False, name="channel1"),
+        channel2 : TextChannel = SlashOption(required=False, name="channel2"),
+        channel3 : TextChannel = SlashOption(required=False, name="channel3"),
+        channel4 : TextChannel = SlashOption(required=False, name="channel4"),
+        channel5 : TextChannel = SlashOption(required=False, name="channel5"),
+        channel6 : TextChannel = SlashOption(required=False, name="channel6"),
+        ):
+
+        valid_image = any(word in image.content_type for word in ["image", "png", "jpeg"]) if image else False
+
+        announce_embed = Embed(
+            title=title, 
+            description=description, 
+            colour=0xba7b0d
+            )
+        
+        author_name = interaction.user.nick if interaction.user.nick else interaction.user.name
+        announce_embed.set_author(
+            icon_url=interaction.user.avatar, 
+            name=f"from {author_name}"
+            )
+        channels_to_send = [channel for channel in [channel1, channel2, channel3, channel4, channel5, channel6] if channel]
+        if not channels_to_send:
+            channels_to_send = [interaction.channel]
+        channel_names = [channel.name for channel in channels_to_send]
+
+        confirm_embed = Embed(
+            title="Are you sure of sending this message?", 
+            description=f"``title:`` {title}\n``description:`` {description}\n``channels:`` {', '.join(channel_names)}\n{'``image:``' if valid_image else ''}", 
+            colour=Color.blue()
+            )
+        
+        success_embed = Embed(
+            title="Message sent successfully !", 
+            description=f"Check {' '.join(channel.mention for channel in channels_to_send)}", 
+            colour=Color.green()
+            )
+        
+        fail_embed = Embed(
+            title="Sending canceled !",
+            colour=Color.red()
+            )
+        
+        if valid_image:
+            announce_embed.set_image(image)
+            confirm_embed.set_image(image)
+
+        confirm_view = Confirm()
+        
+        await interaction.response.send_message(embed=confirm_embed, view=confirm_view, ephemeral=True)
+        await confirm_view.wait()
+        
+        if confirm_view.value:
+            for channel in channels_to_send:
+                await channel.send(embed=announce_embed, content=content)
+                await interaction.edit_original_message(embed=success_embed, view=None)
+        else:
+            await interaction.edit_original_message(embed=fail_embed, view=None)
 
 
     @application_checks.has_permissions(administrator=True)
