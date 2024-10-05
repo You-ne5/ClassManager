@@ -76,6 +76,8 @@ class Events(Cog):
 
         if not message.guild:
             return
+        if message.author.bot:
+            return
         
         lessons_category_id = await get_constant_id(message.guild.id, "LessonsCategoryId")
         channel = message.channel
