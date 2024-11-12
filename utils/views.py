@@ -116,7 +116,7 @@ class HelpPanel(ui.View):
 
                 perms = {
                     interaction.guild.default_role: PermissionOverwrite(
-                        view_channel=True, send_messages=False
+                    send_messages=False
                     )
                 }
                 HELP_ARCHIVE_CATEGORY_ID = await get_constant_id(
