@@ -13,6 +13,7 @@ from utils.views import HelpView, HelpPanel, ValidateView, ValidationModal
 from utils.functions import message_verif
 from utils.get_functions import get_constant_id
 from utils.db import DB
+import validators
 
 class Events(Cog):
     def __init__(self, client: Bot) -> None:
@@ -72,7 +73,8 @@ class Events(Cog):
 
 
     @Cog.listener()
-    async def on_message(self, message: Message):
+    async def on_message(self, message: Message):  
+        prohibited_words = ["stemcommunuty"]
 
         if not message.guild:
             return
@@ -92,6 +94,8 @@ class Events(Cog):
         if (
             message.channel.category.id == lessons_category_id
             and not message_verif(message)
+            or
+            any(prohibited_word in message.content for prohibited_word in prohibited_words)
         ):
             await message.delete()
             await message.author.send(embed=alert_embed)
