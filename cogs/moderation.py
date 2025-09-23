@@ -254,23 +254,6 @@ class Moderation(Cog):
 
         await loading_message.edit(embed=return_embed)
 
-    @application_checks.has_permissions(administrator=True)
-    @slash_command(name="reset_section_group_roles")
-    async def reset_section_group_roles(self, interaction : Interaction):
-
-        roles_to_remove = []
-
-        for member in interaction.guild.members:
-            for role in member.roles:
-                if "section" in role.name.lower() or "group" in role.name.lower():
-                    roles_to_remove.append(role)
-            
-            try:
-                await member.remove_roles(*roles_to_remove)
-            except:
-                pass
-
-        interaction.response.send_message("section and group roles reset", ephemeral=True)
 
 def setup(client: Bot):
     client.add_cog(Moderation(client))
