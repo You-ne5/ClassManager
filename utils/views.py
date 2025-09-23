@@ -165,6 +165,7 @@ class HelpPanel(ui.View):
 
 class ValidationModal(ui.Modal):
     def __init__(self, guild_sections: list, guild_groups : list):
+        guild_groups.sort();
         guild_groups = [str(num) for num in guild_groups]
         super().__init__(
             title="Validation Form",
