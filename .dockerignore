@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+.dockerignore
+Dockerfile
+
+.venv/
+__pycache__/
+*.pyc
+
+.env
+*.db
+.vscode/
+tests/
+ecosystem.config.js
