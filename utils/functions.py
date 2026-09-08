@@ -8,7 +8,7 @@ from utils.get_functions import get_constant_id
 
 async def create_constant(interaction : Interaction, constant_name_in_db : str) -> None:
     db = DB()
-    await db.load_db("main.db")
+    await db.load_db()
 
     
     student_role_id = await get_constant_id(interaction.guild_id, "StudentRoleId")

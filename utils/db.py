@@ -1,10 +1,12 @@
 from aiosqlite import connect
 
+from config import DB_PATH
+
 class DB:
     def __init__(self) -> None:
         return
     
-    async def load_db(self, path):
+    async def load_db(self, path: str = DB_PATH):
         self.conn = await connect(path)
         self.curr = await self.conn.cursor()
 

@@ -31,7 +31,7 @@ class ValidateView(ui.View):
     async def validate(self, button: ui.Button, interaction: Interaction):
         
         db = DB()
-        await db.load_db("main.db")
+        await db.load_db()
 
         sections = await db.get_fetchall("SELECT Identifier FROM Sections WHERE GuildId=?", (interaction.guild_id,))
         sections = [identifier[0] for identifier in sections]
@@ -77,7 +77,7 @@ class HelpPanel(ui.View):
     async def can_close(self, interaction: Interaction):
 
         self.db = DB()
-        await self.db.load_db("main.db")
+        await self.db.load_db()
 
         author_id = await self.db.get_fetchone(
             "SELECT AuthorId FROM HelpChannels WHERE ChannelId=?",
@@ -209,7 +209,7 @@ class ValidationModal(ui.Modal):
 
     async def callback(self, interaction : Interaction):
         db = DB()
-        await db.load_db("main.db")
+        await db.load_db()
 
         fail_embed = Embed(
             color=EMBED_COLOR
