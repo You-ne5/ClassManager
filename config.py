@@ -9,3 +9,5 @@ DISCORD_TOKEN = env["TOKEN"]
 OWNER_ID = 646780320548388898
 #code
 EMBED_COLOR = 0Xd4af37
+#database
+DB_PATH = env.get("DB_PATH", "main.db")

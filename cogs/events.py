@@ -22,7 +22,7 @@ class Events(Cog):
 
     async def connect_db(self):
         self.db = DB()
-        await self.db.load_db("main.db")
+        await self.db.load_db()
 
 
     @Cog.listener()
@@ -41,7 +41,7 @@ class Events(Cog):
         help_channel = await help_category.create_text_channel(f"{user_name}-{interaction.data["values"][0]}")
 
         self.db = DB()
-        await self.db.load_db("main.db")
+        await self.db.load_db()
 
         await self.db.request("INSERT INTO HelpChannels Values (?,?,?)", (interaction.guild.id, help_channel.id, interaction.user.id))
 

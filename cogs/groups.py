@@ -20,7 +20,7 @@ class Groups(Cog):
 
     async def connect_db(self):
         self.db = DB()
-        await self.db.load_db("main.db")
+        await self.db.load_db()
 
 
     @Cog.listener()

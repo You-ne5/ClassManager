@@ -15,7 +15,7 @@ class Client(Bot):
 
     async def get_ready(self): 
         self.db = DB()
-        await self.db.load_db("main.db")
+        await self.db.load_db()
         self.load_extensions()
 
     def load_extensions(self) -> None:
